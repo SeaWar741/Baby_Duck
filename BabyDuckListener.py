@@ -26,15 +26,6 @@ class BabyDuckListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by BabyDuckParser#varGroup.
-    def enterVarGroup(self, ctx:BabyDuckParser.VarGroupContext):
-        pass
-
-    # Exit a parse tree produced by BabyDuckParser#varGroup.
-    def exitVarGroup(self, ctx:BabyDuckParser.VarGroupContext):
-        pass
-
-
     # Enter a parse tree produced by BabyDuckParser#type.
     def enterType(self, ctx:BabyDuckParser.TypeContext):
         pass
