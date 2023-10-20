@@ -1,0 +1,32 @@
+program myProgram;
+
+var x, y, z : int;
+var a, b : float;
+
+void myFunction(x : int, y : float) [
+    var i : int;
+    i = x + 5;
+    print(i, "This is a number");
+    if (i > 10) {
+        print("Greater than 10");
+    } else {
+        print("Not greater than 10");
+    }
+];
+
+main {
+    x = 5;
+    y = 10;
+    z = x + y;
+    print(z, "Sum of x and y");
+    if (x < y) {
+        print("x is less than y");
+    }
+    while (x < 15) {
+        x = x + 1;
+    }
+    do {
+        y = y - 1;
+    } while (y > 5);
+    myFunction(3, 4.5);
+} end
