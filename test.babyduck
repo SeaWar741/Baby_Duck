@@ -1,7 +1,6 @@
 program myProgram;
 
-var x, y, z : int;
-var a, b : float;
+var x, y, z : int; a, b : float;
 
 void myFunction(x : int, y : float) [
     var i : int;
@@ -29,4 +28,6 @@ main {
         y = y - 1;
     } while (y > 5);
     myFunction(3, 4.5);
-} end
+} 
+
+end

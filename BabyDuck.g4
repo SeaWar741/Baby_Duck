@@ -1,21 +1,21 @@
 grammar BabyDuck;
 
 // Parser Rules
-program: 'program' ID SEMICOLON declarations? (funcs)* main end SEMICOLON;
+program: 'program' ID SEMICOLON ((vars)+)? (funcs)* main body end;
 
-declarations: (vars)+;
+vars: 'var' varGroup (SEMICOLON varGroup)* SEMICOLON;
 
-vars: 'var' ID (COMMA ID)* COLON type SEMICOLON;
+varGroup: ID (COMMA ID)* COLON type;
 
 type: int | float;
 
-funcs: void ID LPAREN (ID COLON type (COMMA ID COLON type)*)? RPAREN LBRACKET (vars)* body RBRACKET SEMICOLON;
+funcs: void ID LPAREN (ID COLON type (COMMA ID COLON type)*)? RPAREN LBRACKET ((vars)+)? body RBRACKET SEMICOLON;
 
 body: LBRACE (statement)* RBRACE;
 
 statement: assign | condition | cycle | f_call | print;
 
-assign: ID EQUALS (expression | STRING) SEMICOLON;
+assign: ID EQUALS (expression) SEMICOLON;
 
 condition: if LPAREN expression RPAREN body (else body)? SEMICOLON;
 
@@ -25,7 +25,7 @@ print: print_w LPAREN (expression COMMA)* (expression | STRING) RPAREN SEMICOLON
 
 f_call: ID LPAREN (expression COMMA)* expression RPAREN SEMICOLON;
 
-expression: exp (GREATERTHAN | LESSTHAN | NOTEQUALS)* exp;
+expression: exp ((GREATERTHAN | LESSTHAN | NOTEQUALS) exp)?;
 
 exp: termino (PLUS | MINUS)* termino;
 

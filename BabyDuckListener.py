@@ -17,21 +17,21 @@ class BabyDuckListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by BabyDuckParser#declarations.
-    def enterDeclarations(self, ctx:BabyDuckParser.DeclarationsContext):
-        pass
-
-    # Exit a parse tree produced by BabyDuckParser#declarations.
-    def exitDeclarations(self, ctx:BabyDuckParser.DeclarationsContext):
-        pass
-
-
     # Enter a parse tree produced by BabyDuckParser#vars.
     def enterVars(self, ctx:BabyDuckParser.VarsContext):
         pass
 
     # Exit a parse tree produced by BabyDuckParser#vars.
     def exitVars(self, ctx:BabyDuckParser.VarsContext):
+        pass
+
+
+    # Enter a parse tree produced by BabyDuckParser#varGroup.
+    def enterVarGroup(self, ctx:BabyDuckParser.VarGroupContext):
+        pass
+
+    # Exit a parse tree produced by BabyDuckParser#varGroup.
+    def exitVarGroup(self, ctx:BabyDuckParser.VarGroupContext):
         pass
 
 
