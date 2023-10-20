@@ -27,16 +27,6 @@ public interface BabyDuckListener extends ParseTreeListener {
 	 */
 	void exitVars(BabyDuckParser.VarsContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link BabyDuckParser#varGroup}.
-	 * @param ctx the parse tree
-	 */
-	void enterVarGroup(BabyDuckParser.VarGroupContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link BabyDuckParser#varGroup}.
-	 * @param ctx the parse tree
-	 */
-	void exitVarGroup(BabyDuckParser.VarGroupContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link BabyDuckParser#type}.
 	 * @param ctx the parse tree
 	 */

@@ -5,6 +5,7 @@ from BabyDuckParser import BabyDuckParser
 from BabyDuckListener import BabyDuckListener   
 from antlr4.tree.Trees import Trees
 
+#helper funcions to debug
 class Listener(BabyDuckListener):
     def exitVars(self, ctx: BabyDuckParser.VarsContext):
         print("var " + ctx.getText())
@@ -29,6 +30,7 @@ def main(argv):
     tree = parser.program()  # 'program' es la regla inicial de la gramática
     if(tree.exception is None):
         print("Sin errores de sintaxis")
+    
 
 if __name__ == '__main__':
     main(sys.argv)

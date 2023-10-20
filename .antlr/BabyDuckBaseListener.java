@@ -40,18 +40,6 @@ public class BabyDuckBaseListener implements BabyDuckListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterVarGroup(BabyDuckParser.VarGroupContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitVarGroup(BabyDuckParser.VarGroupContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterType(BabyDuckParser.TypeContext ctx) { }
 	/**
 	 * {@inheritDoc}
