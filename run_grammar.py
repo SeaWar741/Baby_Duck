@@ -13,6 +13,7 @@ class Listener(BabyDuckListener):
     def __init__(self):
         self.dir_func = DirFunc()
         self.var_table = VarTable()
+        self.scope_stack = ["Global"]  # Initialize with global scope
 
 
     def exitVars(self, ctx: BabyDuckParser.VarsContext):
@@ -49,6 +50,7 @@ class Listener(BabyDuckListener):
         if ctx.assign():
             statement_type = "Assignment"
 
+
         #CONDITION
         elif ctx.condition():
             statement_type = "Condition (if-else)"
@@ -62,6 +64,7 @@ class Listener(BabyDuckListener):
             print(f"If True: {true_body}")
             print(f"If False: {false_body}")
 
+
         #CYCLE
         elif ctx.cycle():
             statement_type = "Cycle (while-do)"
@@ -70,8 +73,7 @@ class Listener(BabyDuckListener):
             print(f"While Body: {while_body}")
             print(f"Do Expression: {do_expression}")
 
-        
-        #FUNCTION CALL
+
         elif ctx.f_call():
             statement_type = "Function Call"
             func_name = ctx.f_call().ID().getText()
@@ -80,48 +82,53 @@ class Listener(BabyDuckListener):
                 func_params = [param.getText() for param in ctx.f_call().expression()]
                 
                 print(f"Function Name: {func_name} | Parameters: {func_params}")
-                #here we need to create subtable for the function  and add the variables
             else:
                 print(f"Function Name: {func_name} | No Parameters")
-            
-            #search for the function in the directory of functions
-            #if found --> error (multiple declaration)
-            #if not found --> add the function to the directory of functions
-            #add the variables to the subtable of the function
-            #search for id-name in current scope
-            #if found --> error (multiple declaration)
-            #if not found --> add the variable to the variable table of the current scope
-                        
-                        
-            # Search for the function in the directory of functions
-            if func_name in self.dir_func.df["id-name"].values:
-                print(f"Error: Multiple declaration of function {func_name}")
-            else:
-                # Add the function to the directory of functions
-                self.dir_func.add_func(func_name, "void", scope="Local")
 
-                # Create a subtable for the function
-                func_var_table = VarTable()
-
-                # Add the variables to the subtable of the function
-                for param in func_params:
-                    if param in func_var_table.df["id-name"].values:
-                        print(f"Error: Multiple declaration of variable {param} in function {func_name}")
-                    else:
-                        func_var_table.add_var(param, "UnknownType", scope=func_name)  # Assuming type is unknown for now
-
-                # Merge the function's var table with the main var table
-                self.var_table.df = pd.concat([self.var_table.df, func_var_table.df], ignore_index=True)
-
-
-        elif ctx.print_():  # Note the underscore here
-            statement_type = "Print"
-        else:
-            statement_type = "Unknown"
-
-        # Print the captured statement and its type
-        print(f"Statement Type: {statement_type} | Text: {statement_text}")
         print("")
+
+    
+    def enterFuncs(self, ctx: BabyDuckParser.FuncsContext):
+        # Push the function name to the scope stack when entering a function
+        func_name = ctx.ID()[0].getText()
+        self.scope_stack.append(func_name)
+
+    def exitFuncs(self, ctx: BabyDuckParser.FuncsContext):
+        # Extract the function name
+        func_name = ctx.ID()[0].getText()
+
+        # Check if the function is already in the directory of functions
+        if func_name in self.dir_func.df["id-name"].values:
+            #print(f"Error: Multiple declaration of function {func_name}")
+            raise ValueError(f"Error: Multiple declaration of function {func_name}")
+        else:
+            # Add the function to the directory of functions
+            self.dir_func.add_func(func_name, "void", scope="Local")
+
+            # Create a subtable for the function
+            func_var_table = VarTable()
+
+            # Iterate over the children of the FuncsContext
+            for i, child in enumerate(ctx.children):
+                # Check if the child is a COLON token, which indicates the start of a type
+                if isinstance(child, TerminalNode) and child.getSymbol().type == BabyDuckLexer.COLON:
+                    # The next child should be the type
+                    var_type = ctx.children[i + 1].getText()
+                    # Now, extract the associated IDs for this type
+                    j = i - 1
+    
+    def exitAssign(self, ctx: BabyDuckParser.AssignContext):
+        # Check if the variable being assigned to is declared
+        var_name = ctx.ID().getText()
+        if not self.is_var_declared(var_name):
+            raise ValueError(f"Error: Undeclared variable {var_name}")
+
+    def is_var_declared(self, var_name):
+        # Check if a variable is declared in the current scope or any outer scope
+        for scope in reversed(self.scope_stack):
+            if self.var_table.df[(self.var_table.df["id-name"] == var_name) & (self.var_table.df["scope"] == scope)].shape[0] > 0:
+                return True
+        return False
 
 def main(argv):
     # Leer el archivo de entrada

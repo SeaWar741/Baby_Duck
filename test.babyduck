@@ -3,16 +3,17 @@ program CompilerV1;
 var foo: int; bar, foobar, barfoo: float;
 
 void emptyFunction() [{}];
+
 void emptyFunction2(floatNumber: float, intNumber: int) [
     var 
-        number1: int;
+        number1,i,j: int;
         number2: float;
     
     {
-        assign1 = 1 + 2;
-        assign2 = (+1 + -2) != 3/2;
-        assign3 = 1 + 2 / (1 + 2) < assign1;
-        assign4 = (69 + 420 / -assign1) > 3;
+        number1 = 1 + 2;
+        number2 = (+1 + -2) != 3/2;
+        number1 = 1 + 2 / (1 + 2) < assign1;
+        number2 = (69 + 420 / -assign1) > 3;
 
         if (condition1) { };
 
@@ -39,10 +40,10 @@ void emptyFunction2(floatNumber: float, intNumber: int) [
 
 main 
 { 
-    assign1 = 1 + 2;
-    assign2 = (+1 + -2) != 3/2;
-    assign3 = 1 + 2 / (1 + 2) < assign1;
-    assign4 = (69 + 420 / -assign1) > 3;
+    bar = 1 + 2;
+    foobar = (+1 + -2) != 3/2;
+    barfoo = 1 + 2 / (1 + 2) < bar;
+    bar = (69 + 420 / -bar) > 3;
 
     if (condition1) { };
 

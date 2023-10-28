@@ -23,21 +23,3 @@ class VarTable:
 
     def delete(self):
         self.df = pd.DataFrame(columns=["id-name", "type", "value", "scope"])
-
-""" # Example usage:
-dir_func = DirFunc()
-var_table = VarTable()
-
-# Add a function to DirFunc with a specific scope
-dir_func.add_func("program", "void", scope="Local")
-
-# Add a variable to VarTable with a value and a specific scope
-var_table.add_var("x", "int", value=10, scope="Local")
-
-#display the tables
-print("Directory of Functions")
-print(dir_func.df)
-
-print("\nVariable Table")
-print(var_table.df)
- """
