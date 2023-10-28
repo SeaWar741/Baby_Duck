@@ -6,16 +6,8 @@ from BabyDuckListener import BabyDuckListener
 from antlr4.tree.Trees import Trees
 from semanticAnalyzer import SemanticAnalyzer
 from semanticTable import SemanticTable
+import pandas as pd
 
-#helper funcions to debug
-""" class Listener(BabyDuckListener):
-    def exitVars(self, ctx: BabyDuckParser.VarsContext):
-        print("var " + ctx.getText())
-
-        return super().exitVars(ctx)
-    def exitStatement(self, ctx: BabyDuckParser.StatementContext):
-        print("statement " + ctx.getText())
-        return super().exitStatement(ctx)  """
 
 class Listener(BabyDuckListener):
     def __init__(self):
@@ -41,21 +33,51 @@ class Listener(BabyDuckListener):
                         var_name = ctx.children[j].getText()
                         print(f"Added variable: {var_name} | type: {var_type} | scope: {scope}")
                     j -= 1
-
+                    
 
     def exitStatement(self, ctx: BabyDuckParser.StatementContext):
         # Capture the entire text of the statement
         statement_text = ctx.getText()
 
         # Determine the type of the statement
+
+        #ASSIGN
         if ctx.assign():
             statement_type = "Assignment"
+
+        #CONDITION
         elif ctx.condition():
             statement_type = "Condition (if-else)"
+            condition_text = ctx.condition().expression().getText()
+            true_body = ctx.condition().body(0).getText()  # Body when condition is true
+            if ctx.condition().body(1):  # Check if there's an 'else' body
+                false_body = ctx.condition().body(1).getText()  # Body when condition is false
+            else:
+                false_body = "None"
+            print(f"Condition: {condition_text}")
+            print(f"If True: {true_body}")
+            print(f"If False: {false_body}")
+
+        #CYCLE
         elif ctx.cycle():
             statement_type = "Cycle (while-do)"
+            while_body = ctx.cycle().body().getText()  # Body of the while loop
+            do_expression = ctx.cycle().expression().getText()  # Expression after the 'do' keyword
+            print(f"While Body: {while_body}")
+            print(f"Do Expression: {do_expression}")
+
+        
+        #FUNCTION CALL
         elif ctx.f_call():
             statement_type = "Function Call"
+            func_name = ctx.f_call().ID().getText()
+            if ctx.f_call().expression():
+                params = [param.getText() for param in ctx.f_call().expression()]
+                print(f"Function Name: {func_name} | Parameters: {params}")
+            else:
+                print(f"Function Name: {func_name} | No Parameters")
+
+
         elif ctx.print_():  # Note the underscore here
             statement_type = "Print"
         else:
@@ -63,7 +85,7 @@ class Listener(BabyDuckListener):
 
         # Print the captured statement and its type
         print(f"Statement Type: {statement_type} | Text: {statement_text}")
-
+        print("")
 
 def main(argv):
     # Leer el archivo de entrada
