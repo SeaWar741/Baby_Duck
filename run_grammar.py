@@ -5,13 +5,15 @@ from BabyDuckParser import BabyDuckParser
 from BabyDuckListener import BabyDuckListener   
 from antlr4.tree.Trees import Trees
 from semanticAnalyzer import SemanticAnalyzer
-from semanticTable import SemanticTable
+from semanticTable import DirFunc, VarTable
 import pandas as pd
 
 
 class Listener(BabyDuckListener):
     def __init__(self):
-        self.semantic_table = SemanticTable()  # Create an instance of the SemanticTable class
+        self.dir_func = DirFunc()
+        self.var_table = VarTable()
+
 
     def exitVars(self, ctx: BabyDuckParser.VarsContext):
         # Determine the scope
@@ -32,6 +34,8 @@ class Listener(BabyDuckListener):
                     if ctx.children[j].getSymbol().type == BabyDuckLexer.ID:
                         var_name = ctx.children[j].getText()
                         print(f"Added variable: {var_name} | type: {var_type} | scope: {scope}")
+                        self.var_table.add_var(var_name, var_type, scope=scope)
+
                     j -= 1
                     
 
@@ -73,7 +77,9 @@ class Listener(BabyDuckListener):
             func_name = ctx.f_call().ID().getText()
             if ctx.f_call().expression():
                 params = [param.getText() for param in ctx.f_call().expression()]
+                
                 print(f"Function Name: {func_name} | Parameters: {params}")
+                #here we need to create subtable for the function  and add the variables
             else:
                 print(f"Function Name: {func_name} | No Parameters")
 
@@ -110,6 +116,12 @@ def main(argv):
     
     if(tree.exception is None):
         print("Sin errores de sintaxis")
+
+    print("---------------------------------------------------------------------")
+    print("Directory of Functions")
+    print(listener.dir_func.df)
+    print("\nVariable Table")
+    print(listener.var_table.df)
     
 
 if __name__ == '__main__':

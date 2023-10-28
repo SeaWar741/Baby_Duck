@@ -1,52 +1,43 @@
 import pandas as pd
 
-class SemanticTable:
+class DirFunc:
     def __init__(self):
-        # Functions Directory
-        func_columns = ['Function Name', 'Return Type', 'Parameters', 'Var-table']
-        self.functions_directory = pd.DataFrame(columns=func_columns)
+        self.df = pd.DataFrame(columns=["id-name", "type", "scope"])
+        
+    def add_func(self, id_name, func_type, scope="Global"):
+        if id_name in self.df["id-name"].values:
+            raise ValueError(f"Error: Multiple declaration of {id_name}")
+        self.df.loc[len(self.df)] = [id_name, func_type, scope]
 
-        # Global Var-table
-        var_columns = ['Variable Name', 'Type', 'Value', 'Scope']
-        self.global_var_table = pd.DataFrame(columns=var_columns)
+    def delete(self):
+        self.df = pd.DataFrame(columns=["id-name", "type", "scope"])
 
-    def add_function(self, name, return_type, parameters):
-        local_var_table = pd.DataFrame(columns=self.global_var_table.columns)  # Each function gets its own Var-table
-        new_function = pd.DataFrame({
-            'Function Name': [name],
-            'Return Type': [return_type],
-            'Parameters': [parameters],
-            'Var-table': [local_var_table]
-        })
-        self.functions_directory = pd.concat([self.functions_directory, new_function], ignore_index=True)
+class VarTable:
+    def __init__(self):
+        self.df = pd.DataFrame(columns=["id-name", "type", "value", "scope"])
 
-    def add_global_var(self, name, type, value):
-        new_var = pd.DataFrame({
-            'Variable Name': [name],
-            'Type': [type],
-            'Value': [value],
-            'Scope': ['Global']
-        })
-        self.global_var_table = pd.concat([self.global_var_table, new_var], ignore_index=True)
+    def add_var(self, id_name, var_type, value=None, scope="Global"):
+        if id_name in self.df["id-name"].values:
+            raise ValueError(f"Error: Multiple declaration of {id_name}")
+        self.df.loc[len(self.df)] = [id_name, var_type, value, scope]
 
-    def add_local_var(self, name, type, value, scope):
-        local_var_table = self.functions_directory.loc[self.functions_directory['Function Name'] == scope, 'Var-table'].iloc[0]
-        new_var = pd.DataFrame({
-            'Variable Name': [name],
-            'Type': [type],
-            'Value': [value],
-            'Scope': [scope]
-        })
-        updated_var_table = pd.concat([local_var_table, new_var], ignore_index=True)
-        # Update the Var-table in the functions_directory
-        self.functions_directory.loc[self.functions_directory['Function Name'] == scope, 'Var-table'] = [updated_var_table]
+    def delete(self):
+        self.df = pd.DataFrame(columns=["id-name", "type", "value", "scope"])
 
-    def search_global_var(self, name):
-        return self.global_var_table.loc[self.global_var_table['Variable Name'] == name]
+""" # Example usage:
+dir_func = DirFunc()
+var_table = VarTable()
 
-    def search_local_var(self, name, scope):
-        local_var_table = self.functions_directory.loc[self.functions_directory['Function Name'] == scope, 'Var-table'].iloc[0]
-        return local_var_table.loc[local_var_table['Variable Name'] == name]
+# Add a function to DirFunc with a specific scope
+dir_func.add_func("program", "void", scope="Local")
 
-    def search_function(self, name):
-        return self.functions_directory.loc[self.functions_directory['Function Name'] == name]
+# Add a variable to VarTable with a value and a specific scope
+var_table.add_var("x", "int", value=10, scope="Local")
+
+#display the tables
+print("Directory of Functions")
+print(dir_func.df)
+
+print("\nVariable Table")
+print(var_table.df)
+ """
