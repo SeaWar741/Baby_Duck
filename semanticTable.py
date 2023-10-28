@@ -2,7 +2,7 @@ import pandas as pd
 
 class DirFunc:
     def __init__(self):
-        self.df = pd.DataFrame(columns=["id-name", "type", "scope"])
+        self.df = pd.DataFrame(columns=["id-name", "scope","var-table"])
         
     def add_func(self, id_name, func_type, scope="Global"):
         if id_name in self.df["id-name"].values:
@@ -10,7 +10,7 @@ class DirFunc:
         self.df.loc[len(self.df)] = [id_name, func_type, scope]
 
     def delete(self):
-        self.df = pd.DataFrame(columns=["id-name", "type", "scope"])
+        self.df = pd.DataFrame(columns=["id-name", "scope","var-table"])
 
 class VarTable:
     def __init__(self):
