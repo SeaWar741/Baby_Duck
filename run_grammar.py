@@ -1,13 +1,14 @@
 import sys
 from antlr4 import *
-from BabyDuckLexer import BabyDuckLexer
-from BabyDuckParser import BabyDuckParser
-from BabyDuckListener import BabyDuckListener   
-from BabyDuckVisitor import BabyDuckVisitor
+from utils.BabyDuckLexer import BabyDuckLexer
+from utils.BabyDuckParser import BabyDuckParser
+from utils.BabyDuckListener import BabyDuckListener   
+from utils.BabyDuckVisitor import BabyDuckVisitor
 from antlr4.tree.Trees import Trees
 from semanticAnalyzer import SemanticAnalyzer
 from semanticTable import DirFunc, VarTable
 import pandas as pd
+
 
 
 class Listener(BabyDuckListener):
@@ -151,6 +152,7 @@ class Visitor(BabyDuckVisitor):
             '/': 2,
             '(': 0
         }
+        operandList = []
 
     def visitFactor(self, ctx: BabyDuckParser.FactorContext):
         # First, let's try to find the assignment context by moving up the parse tree
@@ -169,6 +171,8 @@ class Visitor(BabyDuckVisitor):
         else:
             unary_op = None
             print("Factor: ", ctx.getText())
+
+    
 
 
 
@@ -206,7 +210,6 @@ def main(argv):
     # Create a visitor instance
     visitor = Visitor(listener.var_table, listener.dir_func)
     visitor.visit(tree)
-
 
     
 
