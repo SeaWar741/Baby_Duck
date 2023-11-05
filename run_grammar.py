@@ -138,40 +138,64 @@ class Listener(BabyDuckListener):
 
 
 class Visitor(BabyDuckVisitor):
-
-    def __init__(self,varTable,dirFunc):
-        self.varTable = varTable
-        self.dirFunc = dirFunc
-        self.semanticAnalyzer = SemanticAnalyzer()
-        self.scope_stack = ["Global"]
-        #procedence using PEMDAS
-        self.orderProcedence = {
-            '+': 1,
-            '-': 1,
-            '*': 2,
-            '/': 2,
-            '(': 0
+    def __init__(self):
+        self.temp_counter = 0
+        self.quadruples = []
+        self.operand_stack = []
+        self.operator_stack = []
+        self.type_stack = []
+        self.jump_stack = []
+        self.precedence = {
+            "(": 1,
+            "+": 2,
+            "-": 2,
+            "*": 3,
+            "/": 3,
         }
-        operandList = []
+
+    def new_temporary(self):
+        # Generate a new temporary variable
+        temp_var = f"t{self.temp_counter}"
+        self.temp_counter += 1
+        return temp_var
+
+    def generate_quadruple(self, operator, left_operand, right_operand, result):
+        # Create a quadruple tuple and add it to the list of quadruples
+        quadruple = (operator, left_operand, right_operand, result)
+        self.quadruples.append(quadruple)
 
     def visitFactor(self, ctx: BabyDuckParser.FactorContext):
-        # First, let's try to find the assignment context by moving up the parse tree
-        parent_ctx = ctx.parentCtx
-        while parent_ctx is not None and not isinstance(parent_ctx, BabyDuckParser.AssignContext):
-            parent_ctx = parent_ctx.parentCtx
-
-        # If we found an AssignContext, we can try to print the variable being assigned
-        if parent_ctx is not None and isinstance(parent_ctx, BabyDuckParser.AssignContext):
-            var_name = parent_ctx.ID().getText()
-            print(f"Variable being assigned: {var_name}")
-
-        if ctx.LPAREN():
-            # Una expresión entre paréntesis debe evaluarse por sí misma.
-            print("Factor inside parenthesis: ", ctx.getText())
+        # Check if the factor is a parenthesized expression
+        if ctx.LPAREN() and ctx.RPAREN():
+            # A parenthesized expression should be evaluated on its own terms.
+            print(ctx.expression().getText())
+            return self.visit(ctx.expression())
         else:
             unary_op = None
-            print("Factor: ", ctx.getText())
+            operand = None
 
+            # Check if there is a unary operator present
+            if ctx.MINUS() or ctx.PLUS():
+                unary_op = ctx.MINUS().getText() if ctx.MINUS() else ctx.PLUS().getText()
+                # The operand follows the unary operator, which is the next child
+                operand = self.visitChildren(ctx)  # This will visit the child nodes of the context
+            else:
+                operand = ctx.getText()
+
+            # If there's a unary operator, handle the operation
+            if unary_op:
+                temp_var = self.new_temporary()
+                # Generate a quadruple for the unary operation
+                self.generate_quadruple(unary_op, operand, None, temp_var)
+                # Push the result of the unary operation onto the operand stack
+                self.operand_stack.append(temp_var)
+            else:
+                # Push the operand onto the operand stack
+                self.operand_stack.append(operand)
+
+            print("Operand stack: ", self.operand_stack)
+            print("")
+            return self.operand_stack[-1] if self.operand_stack else None
     
 
 
@@ -208,7 +232,7 @@ def main(argv):
 
 
     # Create a visitor instance
-    visitor = Visitor(listener.var_table, listener.dir_func)
+    visitor = Visitor()
     visitor.visit(tree)
 
     
