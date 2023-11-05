@@ -11,7 +11,7 @@ void emptyFunction2(floatNumber: float, intNumber: int) [
     
     {
         number1 = 1 + 2;
-        number2 = (+1 + -2) != 3/2;
+        number2 = (1 + -2) != 3/2;
         number1 = 1 + 2 / (1 + 2) < assign1;
         number2 = (69 + 420 / -assign1) > 3;
 
@@ -41,7 +41,7 @@ void emptyFunction2(floatNumber: float, intNumber: int) [
 main 
 { 
     bar = 1 + 2;
-    foobar = (+1 + -2) != 3/2;
+    foobar = (1 + -2) != 3/2;
     barfoo = 1 + 2 / (1 + 2) < bar;
     bar = (69 + 420 / -bar) > 3;
 

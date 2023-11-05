@@ -153,15 +153,22 @@ class Visitor(BabyDuckVisitor):
         }
 
     def visitFactor(self, ctx: BabyDuckParser.FactorContext):
-        #check if factor is inside parenthesis
+        # First, let's try to find the assignment context by moving up the parse tree
+        parent_ctx = ctx.parentCtx
+        while parent_ctx is not None and not isinstance(parent_ctx, BabyDuckParser.AssignContext):
+            parent_ctx = parent_ctx.parentCtx
+
+        # If we found an AssignContext, we can try to print the variable being assigned
+        if parent_ctx is not None and isinstance(parent_ctx, BabyDuckParser.AssignContext):
+            var_name = parent_ctx.ID().getText()
+            print(f"Variable being assigned: {var_name}")
+
         if ctx.LPAREN():
-            return self.visit(ctx.expression())
-        
+            # Una expresión entre paréntesis debe evaluarse por sí misma.
+            print("Factor inside parenthesis: ", ctx.getText())
         else:
-            #print (ctx.getText())
-            print("Factor: ",ctx.getText())
-
-
+            unary_op = None
+            print("Factor: ", ctx.getText())
 
 
 
@@ -199,7 +206,7 @@ def main(argv):
     # Create a visitor instance
     visitor = Visitor(listener.var_table, listener.dir_func)
     visitor.visit(tree)
-    
+
 
     
 
