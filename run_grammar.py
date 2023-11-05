@@ -3,6 +3,7 @@ from antlr4 import *
 from BabyDuckLexer import BabyDuckLexer
 from BabyDuckParser import BabyDuckParser
 from BabyDuckListener import BabyDuckListener   
+from BabyDuckVisitor import BabyDuckVisitor
 from antlr4.tree.Trees import Trees
 from semanticAnalyzer import SemanticAnalyzer
 from semanticTable import DirFunc, VarTable
@@ -14,8 +15,6 @@ class Listener(BabyDuckListener):
         self.dir_func = DirFunc()
         self.var_table = VarTable()
         self.scope_stack = ["Global"]  # Initialize with global scope
-        self.semantic_analyzer = SemanticAnalyzer()
-
 
     def exitVars(self, ctx: BabyDuckParser.VarsContext):
         # Determine the scope
@@ -37,7 +36,6 @@ class Listener(BabyDuckListener):
                         var_name = ctx.children[j].getText()
                         print(f"Added variable: {var_name} | type: {var_type} | scope: {scope}")
                         self.var_table.add_var(var_name, var_type, scope=scope)
-
                     j -= 1
                     
 
@@ -137,6 +135,36 @@ class Listener(BabyDuckListener):
                 return True
         return False
 
+
+class Visitor(BabyDuckVisitor):
+
+    def __init__(self,varTable,dirFunc):
+        self.varTable = varTable
+        self.dirFunc = dirFunc
+        self.semanticAnalyzer = SemanticAnalyzer()
+        self.scope_stack = ["Global"]
+        #procedence using PEMDAS
+        self.orderProcedence = {
+            '+': 1,
+            '-': 1,
+            '*': 2,
+            '/': 2,
+            '(': 0
+        }
+
+    def visitFactor(self, ctx: BabyDuckParser.FactorContext):
+        #check if factor is inside parenthesis
+        if ctx.LPAREN():
+            return self.visit(ctx.expression())
+        
+        else:
+            #print (ctx.getText())
+            print("Factor: ",ctx.getText())
+
+
+
+
+
 def main(argv):
     # Leer el archivo de entrada
     input_stream = FileStream(argv[1])
@@ -150,14 +178,12 @@ def main(argv):
 
     tree = parser.program()  # 'program' es la regla inicial de la gramática
 
-
-    #parser.addParseListener(Listener())
-    
     # Crea una instancia del Listener y pasa la instancia a ParseTreeWalker
     listener = Listener()
     walker = ParseTreeWalker()
+
     walker.walk(listener, tree)
-    
+
     if(tree.exception is None):
         print("Sin errores de sintaxis")
 
@@ -166,6 +192,15 @@ def main(argv):
     print(listener.dir_func.df)
     print("\nVariable Table")
     print(listener.var_table.df)
+    print("\nPARSING COMPLETE")
+    print("---------------------------------------------------------------------")
+
+
+    # Create a visitor instance
+    visitor = Visitor(listener.var_table, listener.dir_func)
+    visitor.visit(tree)
+    
+
     
 
 if __name__ == '__main__':

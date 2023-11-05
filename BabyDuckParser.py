@@ -243,6 +243,12 @@ class BabyDuckParser ( Parser ):
             if hasattr( listener, "exitProgram" ):
                 listener.exitProgram(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitProgram" ):
+                return visitor.visitProgram(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -341,6 +347,12 @@ class BabyDuckParser ( Parser ):
             if hasattr( listener, "exitVars" ):
                 listener.exitVars(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitVars" ):
+                return visitor.visitVars(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -417,6 +429,12 @@ class BabyDuckParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitType" ):
                 listener.exitType(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitType" ):
+                return visitor.visitType(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -521,6 +539,12 @@ class BabyDuckParser ( Parser ):
             if hasattr( listener, "exitFuncs" ):
                 listener.exitFuncs(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitFuncs" ):
+                return visitor.visitFuncs(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -623,6 +647,12 @@ class BabyDuckParser ( Parser ):
             if hasattr( listener, "exitBody" ):
                 listener.exitBody(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitBody" ):
+                return visitor.visitBody(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -693,6 +723,12 @@ class BabyDuckParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitStatement" ):
                 listener.exitStatement(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitStatement" ):
+                return visitor.visitStatement(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -776,6 +812,12 @@ class BabyDuckParser ( Parser ):
             if hasattr( listener, "exitAssign" ):
                 listener.exitAssign(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitAssign" ):
+                return visitor.visitAssign(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -847,6 +889,12 @@ class BabyDuckParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitCondition" ):
                 listener.exitCondition(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitCondition" ):
+                return visitor.visitCondition(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -932,6 +980,12 @@ class BabyDuckParser ( Parser ):
             if hasattr( listener, "exitCycle" ):
                 listener.exitCycle(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitCycle" ):
+                return visitor.visitCycle(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -1013,6 +1067,12 @@ class BabyDuckParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitPrint" ):
                 listener.exitPrint(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitPrint" ):
+                return visitor.visitPrint(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -1122,6 +1182,12 @@ class BabyDuckParser ( Parser ):
             if hasattr( listener, "exitF_call" ):
                 listener.exitF_call(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitF_call" ):
+                return visitor.visitF_call(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -1203,6 +1269,12 @@ class BabyDuckParser ( Parser ):
             if hasattr( listener, "exitExpression" ):
                 listener.exitExpression(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitExpression" ):
+                return visitor.visitExpression(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -1276,6 +1348,12 @@ class BabyDuckParser ( Parser ):
             if hasattr( listener, "exitExp" ):
                 listener.exitExp(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitExp" ):
+                return visitor.visitExp(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -1344,6 +1422,12 @@ class BabyDuckParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitTermino" ):
                 listener.exitTermino(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitTermino" ):
+                return visitor.visitTermino(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -1421,6 +1505,12 @@ class BabyDuckParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitFactor" ):
                 listener.exitFactor(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitFactor" ):
+                return visitor.visitFactor(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -1509,6 +1599,12 @@ class BabyDuckParser ( Parser ):
             if hasattr( listener, "exitCte" ):
                 listener.exitCte(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitCte" ):
+                return visitor.visitCte(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -1554,6 +1650,12 @@ class BabyDuckParser ( Parser ):
             if hasattr( listener, "exitIf" ):
                 listener.exitIf(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitIf" ):
+                return visitor.visitIf(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -1592,6 +1694,12 @@ class BabyDuckParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitElse" ):
                 listener.exitElse(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitElse" ):
+                return visitor.visitElse(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -1632,6 +1740,12 @@ class BabyDuckParser ( Parser ):
             if hasattr( listener, "exitWhile" ):
                 listener.exitWhile(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitWhile" ):
+                return visitor.visitWhile(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -1670,6 +1784,12 @@ class BabyDuckParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitDo" ):
                 listener.exitDo(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitDo" ):
+                return visitor.visitDo(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -1710,6 +1830,12 @@ class BabyDuckParser ( Parser ):
             if hasattr( listener, "exitPrint_w" ):
                 listener.exitPrint_w(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitPrint_w" ):
+                return visitor.visitPrint_w(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -1748,6 +1874,12 @@ class BabyDuckParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitVoid" ):
                 listener.exitVoid(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitVoid" ):
+                return visitor.visitVoid(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -1788,6 +1920,12 @@ class BabyDuckParser ( Parser ):
             if hasattr( listener, "exitInt" ):
                 listener.exitInt(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitInt" ):
+                return visitor.visitInt(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -1826,6 +1964,12 @@ class BabyDuckParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitFloat" ):
                 listener.exitFloat(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitFloat" ):
+                return visitor.visitFloat(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -1866,6 +2010,12 @@ class BabyDuckParser ( Parser ):
             if hasattr( listener, "exitMain" ):
                 listener.exitMain(self)
 
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitMain" ):
+                return visitor.visitMain(self)
+            else:
+                return visitor.visitChildren(self)
+
 
 
 
@@ -1904,6 +2054,12 @@ class BabyDuckParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitEnd" ):
                 listener.exitEnd(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitEnd" ):
+                return visitor.visitEnd(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
