@@ -14,6 +14,7 @@ class Listener(BabyDuckListener):
         self.dir_func = DirFunc()
         self.var_table = VarTable()
         self.scope_stack = ["Global"]  # Initialize with global scope
+        self.semantic_analyzer = SemanticAnalyzer()
 
 
     def exitVars(self, ctx: BabyDuckParser.VarsContext):
@@ -49,7 +50,13 @@ class Listener(BabyDuckListener):
         #ASSIGN
         if ctx.assign():
             statement_type = "Assignment"
+            var_name = ctx.assign().ID().getText()
+            expression = ctx.assign().expression().getText()
+            # Check if the variable is declared
+            if not self.is_var_declared(var_name):
+                raise ValueError(f"Error: Undeclared variable {var_name}")
 
+            print(f"Variable Name: {var_name} | Expression: {expression}")
 
         #CONDITION
         elif ctx.condition():
