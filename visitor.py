@@ -13,7 +13,7 @@ from semanticTable import DirFunc, VarTable
 
 class Visitor(BabyDuckVisitor):
     def __init__(self):
-        self.temp_counter = 1
+        self.temp_counter = 0
         self.quadruples = []
         self.operand_stack = []
         self.operator_stack = []
@@ -60,8 +60,8 @@ class Visitor(BabyDuckVisitor):
 
     def printQuadruples(self):
         print("Quadruples")
-        for quad in self.quadruples:
-            print(quad)
+        for i, quad in enumerate(self.quadruples):
+            print(f"{i}: {quad}")
 
     def printStacks(self):
         print("Operand Stack")
@@ -120,6 +120,11 @@ class Visitor(BabyDuckVisitor):
         quadruple = (operator, left_operand, right_operand, result)
         self.quadruples.append(quadruple)
 
+        # After adding the quadruple to the list, we need to handle the jump stack
+        # for control flow operations like if-else and loops.
+        if operator in ['JMPF', 'JMP', 'JMPT']:
+            self.jump_stack.append(len(self.quadruples) - 1)
+
     def visitCte(self, ctx: BabyDuckParser.CteContext):
         # Return the text of the constant
         return ctx.getText()
@@ -150,10 +155,12 @@ class Visitor(BabyDuckVisitor):
             self.operator_stack.append(operator)
             self.operand_stack.append(right)
 
-        # Process any remaining operators
+        # After processing the expression, we need to ensure that the quadruples are generated
+        # for any remaining operators in the stack.
         while self.operator_stack:
             self.process_operator()
 
+        # Return the last operand, which is the result of the expression.
         return self.operand_stack[-1]
 
     def process_operator(self):
@@ -163,6 +170,7 @@ class Visitor(BabyDuckVisitor):
         temp_var = self.new_temporary()
         self.generate_quadruple(operator, left_operand, right_operand, temp_var)
         self.operand_stack.append(temp_var)
+
 
     def visitUnaryExpression(self, ctx: BabyDuckParser.Unary_expressionContext):
         operator = ctx.getChild(0).getText()
@@ -206,6 +214,7 @@ class Visitor(BabyDuckVisitor):
             self.process_operator()
 
         return self.operand_stack[-1]
+
 
     def visitAssign(self, ctx: BabyDuckParser.AssignContext):
         # Visit the expression to evaluate it and push the result onto the operand stack
@@ -269,7 +278,6 @@ class Visitor(BabyDuckVisitor):
         # Push the result of the function call onto the operand stack
         self.operand_stack.append(result)
 
-
     def fix_jump_targets(self):
         for index, quad in enumerate(self.quadruples):
             if quad[0] in ['JMPF', 'JMP', 'JMPT']:
@@ -286,3 +294,16 @@ class Visitor(BabyDuckVisitor):
                 else:
                     # Handle unexpected jump_target format
                     raise ValueError(f"Unexpected format for jump target: {jump_target}")
+        
+        # We need to update the jump targets for control flow quadruples.
+        while self.jump_stack:
+            jump_quad_index = self.jump_stack.pop()
+            jump_target_index = self.quadruples[jump_quad_index][3]
+            # Update the jump target based on the current quadruple count.
+            self.quadruples[jump_quad_index] = (
+                self.quadruples[jump_quad_index][0],
+                self.quadruples[jump_quad_index][1],
+                self.quadruples[jump_quad_index][2],
+                len(self.quadruples)
+            )
+  
