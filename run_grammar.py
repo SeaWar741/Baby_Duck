@@ -153,6 +153,21 @@ class Visitor(BabyDuckVisitor):
             "/": 3,
         }
 
+    def printQuadruples(self):
+        print("Quadruples")
+        for quad in self.quadruples:
+            print(quad)
+
+    def printStacks(self):
+        print("Operand Stack")
+        print(self.operand_stack)
+        print("Operator Stack")
+        print(self.operator_stack)
+        print("Type Stack")
+        print(self.type_stack)
+        print("Jump Stack")
+        print(self.jump_stack)
+
     def new_temporary(self):
         # Generate a new temporary variable
         temp_var = f"t{self.temp_counter}"
@@ -197,6 +212,62 @@ class Visitor(BabyDuckVisitor):
             print("")
             return self.operand_stack[-1] if self.operand_stack else None
     
+    def generate_quadruple(self, operator, left_operand, right_operand, result):
+        # Create a quadruple tuple and add it to the list of quadruples
+        quadruple = (operator, left_operand, right_operand, result)
+        self.quadruples.append(quadruple)
+
+
+
+    def visitExpression(self, ctx: BabyDuckParser.ExpressionContext):
+        if ctx.getChildCount() == 1:
+            # If there's only one child, it's just an 'exp'
+            return self.visit(ctx.exp(0))
+
+        elif ctx.getChildCount() == 3:
+            # If there are three children, it's an 'exp' followed by a relational operator and another 'exp'
+            lhs_result = self.visit(ctx.exp(0))
+            rhs_result = self.visit(ctx.exp(1))
+            
+            # The relational operator will be the second child of the expression context
+            rel_op = ctx.getChild(1).getText()
+            
+            temp_var = self.new_temporary()
+
+            self.generate_quadruple(rel_op, lhs_result, rhs_result, temp_var)
+
+            self.operand_stack.append(temp_var)
+            
+            return temp_var
+        else:
+            raise Exception("Unsupported expression structure")
+        
+    
+    def visitTerm(self, ctx: BabyDuckParser.TerminoContext):
+        # Start by visiting the first factor
+        result = self.visit(ctx.factor(0))
+
+        # Go through the operators and subsequent factors
+        # Since the factors are separated by operators, the number of operators will be one less than the number of factors
+        num_operators = len(ctx.factor()) - 1
+
+        for i in range(num_operators):
+            # The operator is located at odd indices in the children list (1, 3, 5, ...)
+            operator = ctx.getChild(2 * i + 1).getText()
+            # Visit the next factor
+            right = self.visit(ctx.factor(i + 1))
+
+            if right is not None:
+                result_temp = self.new_temporary()
+
+                # Generate a quadruple for the operation
+                self.generate_quadruple(operator, result, right, result_temp)
+
+                # The result of this operation will be used as the left operand
+                # for the next operation (if any)
+                result = result_temp
+
+        return result
 
 
 
@@ -234,6 +305,7 @@ def main(argv):
     # Create a visitor instance
     visitor = Visitor()
     visitor.visit(tree)
+    visitor.printQuadruples()
 
     
 
