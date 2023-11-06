@@ -143,6 +143,24 @@ class BabyDuckListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by BabyDuckParser#parenthesized_expression.
+    def enterParenthesized_expression(self, ctx:BabyDuckParser.Parenthesized_expressionContext):
+        pass
+
+    # Exit a parse tree produced by BabyDuckParser#parenthesized_expression.
+    def exitParenthesized_expression(self, ctx:BabyDuckParser.Parenthesized_expressionContext):
+        pass
+
+
+    # Enter a parse tree produced by BabyDuckParser#unary_expression.
+    def enterUnary_expression(self, ctx:BabyDuckParser.Unary_expressionContext):
+        pass
+
+    # Exit a parse tree produced by BabyDuckParser#unary_expression.
+    def exitUnary_expression(self, ctx:BabyDuckParser.Unary_expressionContext):
+        pass
+
+
     # Enter a parse tree produced by BabyDuckParser#cte.
     def enterCte(self, ctx:BabyDuckParser.CteContext):
         pass

@@ -84,6 +84,16 @@ class BabyDuckVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by BabyDuckParser#parenthesized_expression.
+    def visitParenthesized_expression(self, ctx:BabyDuckParser.Parenthesized_expressionContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by BabyDuckParser#unary_expression.
+    def visitUnary_expression(self, ctx:BabyDuckParser.Unary_expressionContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by BabyDuckParser#cte.
     def visitCte(self, ctx:BabyDuckParser.CteContext):
         return self.visitChildren(ctx)

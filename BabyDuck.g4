@@ -29,7 +29,10 @@ exp: termino ((PLUS | MINUS) termino)*;
 
 termino: factor ((MULTIPLY | DIVIDE) factor)?;
 
-factor: (LPAREN expression RPAREN) | ((MINUS | PLUS)? (ID | cte));
+factor: parenthesized_expression | unary_expression | (ID | cte);
+parenthesized_expression: LPAREN expression RPAREN;
+unary_expression: (MINUS | PLUS) factor;
+
 
 cte: INTEGER | FLOAT_NUM;
 

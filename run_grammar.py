@@ -1,5 +1,6 @@
 import sys
 from antlr4 import *
+from antlr4 import TerminalNode
 from utils.BabyDuckLexer import BabyDuckLexer
 from utils.BabyDuckParser import BabyDuckParser
 from utils.BabyDuckListener import BabyDuckListener   
@@ -8,7 +9,6 @@ from antlr4.tree.Trees import Trees
 from semanticAnalyzer import SemanticAnalyzer
 from semanticTable import DirFunc, VarTable
 import pandas as pd
-
 
 
 class Listener(BabyDuckListener):
@@ -139,7 +139,7 @@ class Listener(BabyDuckListener):
 
 class Visitor(BabyDuckVisitor):
     def __init__(self):
-        self.temp_counter = 0
+        self.temp_counter = 1
         self.quadruples = []
         self.operand_stack = []
         self.operator_stack = []
@@ -179,95 +179,144 @@ class Visitor(BabyDuckVisitor):
         quadruple = (operator, left_operand, right_operand, result)
         self.quadruples.append(quadruple)
 
+    def visitCte(self, ctx: BabyDuckParser.CteContext):
+        # Return the text of the constant
+        return ctx.getText()
+
     def visitFactor(self, ctx: BabyDuckParser.FactorContext):
-        # Check if the factor is a parenthesized expression
-        if ctx.LPAREN() and ctx.RPAREN():
-            # A parenthesized expression should be evaluated on its own terms.
-            print(ctx.expression().getText())
-            return self.visit(ctx.expression())
+        if ctx.parenthesized_expression():
+            return self.visit(ctx.parenthesized_expression())
+        elif ctx.unary_expression():
+            return self.visit(ctx.unary_expression())
         else:
-            unary_op = None
-            operand = None
-
-            # Check if there is a unary operator present
-            if ctx.MINUS() or ctx.PLUS():
-                unary_op = ctx.MINUS().getText() if ctx.MINUS() else ctx.PLUS().getText()
-                # The operand follows the unary operator, which is the next child
-                operand = self.visitChildren(ctx)  # This will visit the child nodes of the context
-            else:
-                operand = ctx.getText()
-
-            # If there's a unary operator, handle the operation
-            if unary_op:
-                temp_var = self.new_temporary()
-                # Generate a quadruple for the unary operation
-                self.generate_quadruple(unary_op, operand, None, temp_var)
-                # Push the result of the unary operation onto the operand stack
-                self.operand_stack.append(temp_var)
-            else:
-                # Push the operand onto the operand stack
-                self.operand_stack.append(operand)
-
-            print("Operand stack: ", self.operand_stack)
-            print("")
-            return self.operand_stack[-1] if self.operand_stack else None
+            # Handle ID or cte
+            operand = ctx.ID().getText() if ctx.ID() else ctx.cte().getText()
+            self.operand_stack.append(operand)
+            return operand
     
-    def generate_quadruple(self, operator, left_operand, right_operand, result):
-        # Create a quadruple tuple and add it to the list of quadruples
-        quadruple = (operator, left_operand, right_operand, result)
-        self.quadruples.append(quadruple)
-
-
-
-    def visitExpression(self, ctx: BabyDuckParser.ExpressionContext):
-        if ctx.getChildCount() == 1:
-            # If there's only one child, it's just an 'exp'
-            return self.visit(ctx.exp(0))
-
-        elif ctx.getChildCount() == 3:
-            # If there are three children, it's an 'exp' followed by a relational operator and another 'exp'
-            lhs_result = self.visit(ctx.exp(0))
-            rhs_result = self.visit(ctx.exp(1))
-            
-            # The relational operator will be the second child of the expression context
-            rel_op = ctx.getChild(1).getText()
-            
-            temp_var = self.new_temporary()
-
-            self.generate_quadruple(rel_op, lhs_result, rhs_result, temp_var)
-
-            self.operand_stack.append(temp_var)
-            
-            return temp_var
-        else:
-            raise Exception("Unsupported expression structure")
+    def visitExp(self, ctx: BabyDuckParser.ExpContext):
+        left = self.visit(ctx.termino(0))
         
-    
-    def visitTerm(self, ctx: BabyDuckParser.TerminoContext):
-        # Start by visiting the first factor
-        result = self.visit(ctx.factor(0))
+        for i in range(1, len(ctx.termino())):
+            operator = ctx.getChild(2 * i - 1).getText()
+            right = self.visit(ctx.termino(i))
+            
+            # Check operator precedence and handle stack accordingly
+            while (self.operator_stack and
+                self.precedence[self.operator_stack[-1]] >= self.precedence[operator]):
+                self.process_operator()
 
-        # Go through the operators and subsequent factors
-        # Since the factors are separated by operators, the number of operators will be one less than the number of factors
-        num_operators = len(ctx.factor()) - 1
+            self.operator_stack.append(operator)
+            self.operand_stack.append(right)
 
-        for i in range(num_operators):
-            # The operator is located at odd indices in the children list (1, 3, 5, ...)
-            operator = ctx.getChild(2 * i + 1).getText()
-            # Visit the next factor
-            right = self.visit(ctx.factor(i + 1))
+        # Process any remaining operators
+        while self.operator_stack:
+            self.process_operator()
 
-            if right is not None:
-                result_temp = self.new_temporary()
+        return self.operand_stack[-1]
 
-                # Generate a quadruple for the operation
-                self.generate_quadruple(operator, result, right, result_temp)
+    def process_operator(self):
+        right_operand = self.operand_stack.pop()
+        left_operand = self.operand_stack.pop()
+        operator = self.operator_stack.pop()
+        temp_var = self.new_temporary()
+        self.generate_quadruple(operator, left_operand, right_operand, temp_var)
+        self.operand_stack.append(temp_var)
 
-                # The result of this operation will be used as the left operand
-                # for the next operation (if any)
-                result = result_temp
+    def visitUnaryExpression(self, ctx: BabyDuckParser.Unary_expressionContext):
+        operator = ctx.getChild(0).getText()
+        operand = self.visit(ctx.factor())
 
-        return result
+        # Generate a quadruple for the unary operation
+        temp_var = self.new_temporary()
+        self.generate_quadruple(operator, operand, None, temp_var)
+        
+        # Push the result of the unary operation onto the operand stack
+        self.operand_stack.append(temp_var)
+        return temp_var
+
+    def visitTermino(self, ctx: BabyDuckParser.TerminoContext):
+        left = self.visit(ctx.factor(0))
+
+        for i in range(1, len(ctx.factor())):
+            operator = ctx.getChild(2 * i - 1).getText()
+            right = self.visit(ctx.factor(i))
+
+            while (self.operator_stack and
+                self.precedence[self.operator_stack[-1]] >= self.precedence[operator]):
+                self.process_operator()
+
+            self.operator_stack.append(operator)
+            self.operand_stack.append(right)
+
+        while self.operator_stack:
+            self.process_operator()
+
+        return self.operand_stack[-1]
+
+    def visitAssign(self, ctx: BabyDuckParser.AssignContext):
+        # Visit the expression to evaluate it and push the result onto the operand stack
+        value = self.visit(ctx.expression())
+        # The ID to which the value is assigned
+        var_id = ctx.ID().getText()
+        # Generate a quadruple for the assignment
+        self.generate_quadruple('=', value, None, var_id)
+
+    def visitCondition(self, ctx: BabyDuckParser.ConditionContext):
+        # Visit the expression for the condition
+        self.visit(ctx.expression())
+        # Generate a quadruple for the conditional jump
+        false_jump_quad = self.new_temporary()
+        self.generate_quadruple('JMPF', self.operand_stack.pop(), None, false_jump_quad)
+        # Visit the body of the if statement
+        self.visit(ctx.body(0))
+        # If there is an else statement, handle the jump to the end of the block
+        if ctx.else_():
+            end_jump_quad = self.new_temporary()
+            self.generate_quadruple('JMP', None, None, end_jump_quad)
+            # Update the false jump quadruple to jump to the else body
+            self.quadruples[int(false_jump_quad[1:]) - 1] = ('JMPF', self.quadruples[int(false_jump_quad[1:]) - 1][1], None, len(self.quadruples))
+            # Visit the body of the else statement
+            self.visit(ctx.body(1))
+            # Update the end jump quadruple to jump to the end of the if-else block
+            self.quadruples[int(end_jump_quad[1:]) - 1] = ('JMP', None, None, len(self.quadruples))
+        else:
+            # Update the false jump quadruple to jump to the end of the if block
+            self.quadruples[int(false_jump_quad[1:]) - 1] = ('JMPF', self.quadruples[int(false_jump_quad[1:]) - 1][1], None, len(self.quadruples))
+
+    def visitCycle(self, ctx: BabyDuckParser.CycleContext):
+        # Mark the beginning of the cycle for potential jumps
+        start_quad = len(self.quadruples)
+        # Visit the body of the while loop
+        self.visit(ctx.body())
+        # Visit the expression for the loop condition
+        self.visit(ctx.expression())
+        # Generate a quadruple to jump back to the start if the condition is true
+        self.generate_quadruple('JMPT', self.operand_stack.pop(), None, start_quad)
+
+    def visitPrint(self, ctx: BabyDuckParser.PrintContext):
+        # Visit all expressions or strings to be printed
+        for print_item in ctx.expression() + ctx.STRING():
+            # Check if print_item is an instance of TerminalNode, which is used for tokens
+            if isinstance(print_item, TerminalNode):
+                item = print_item.getText()
+            else:
+                item = self.visit(print_item)
+            # Generate a quadruple for the print operation
+            self.generate_quadruple('PRINT', item, None, None)
+
+
+    def visitFCall(self, ctx: BabyDuckParser.F_callContext):
+        # Visit all expressions to be passed as arguments
+        arguments = [self.visit(expr) for expr in ctx.expression()]
+        # Generate a quadruple for the function call
+        # Assuming the function returns a value and it should be stored in a temporary variable
+        result = self.new_temporary()
+        self.generate_quadruple('CALL', ctx.ID().getText(), arguments, result)
+        # Push the result of the function call onto the operand stack
+        self.operand_stack.append(result)
+
+            
 
 
 
@@ -291,15 +340,17 @@ def main(argv):
     walker.walk(listener, tree)
 
     if(tree.exception is None):
-        print("Sin errores de sintaxis")
+        print("\n---------------------------------------------------------------------")
+        print("SIN ERROES DE SINTAXIS")
+        print("---------------------------------------------------------------------\n")
 
-    print("---------------------------------------------------------------------")
     print("Directory of Functions")
     print(listener.dir_func.df)
     print("\nVariable Table")
-    print(listener.var_table.df)
-    print("\nPARSING COMPLETE")
-    print("---------------------------------------------------------------------")
+    print(listener.var_table.df)    
+    print("\n---------------------------------------------------------------------")
+    print("PARSING COMPLETE")
+    print("---------------------------------------------------------------------\n")
 
 
     # Create a visitor instance
