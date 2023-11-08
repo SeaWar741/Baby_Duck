@@ -152,6 +152,8 @@ def main(argv):
 
     tree = parser.program()  # 'program' es la regla inicial de la gramática
 
+    print(tree.toStringTree(recog=parser))
+
     # Crea una instancia del Listener y pasa la instancia a ParseTreeWalker
     listener = Listener()
     walker = ParseTreeWalker()

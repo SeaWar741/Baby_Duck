@@ -157,6 +157,26 @@ public interface BabyDuckListener extends ParseTreeListener {
 	 */
 	void exitFactor(BabyDuckParser.FactorContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link BabyDuckParser#parenthesized_expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterParenthesized_expression(BabyDuckParser.Parenthesized_expressionContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link BabyDuckParser#parenthesized_expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitParenthesized_expression(BabyDuckParser.Parenthesized_expressionContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link BabyDuckParser#unary_expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterUnary_expression(BabyDuckParser.Unary_expressionContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link BabyDuckParser#unary_expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitUnary_expression(BabyDuckParser.Unary_expressionContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link BabyDuckParser#cte}.
 	 * @param ctx the parse tree
 	 */

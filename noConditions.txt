@@ -1,0 +1,18 @@
+program CompilerV1;
+
+var foo: int; bar, foobar, barfoo: float;
+main 
+{ 
+    bar = 1 + 2;
+
+    if (condition1) { };
+
+
+    emptyFunction();
+    notEmptyFunction(argument1, 1+2);
+
+    print(1+2);
+    print(1+2, 2+3, "The quick brown fox jumps over the lazy dog !@#$%^&*()_+][\']");
+}
+
+end     
