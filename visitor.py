@@ -112,8 +112,8 @@ class Visitor(BabyDuckVisitor):
         self.type_stack.append(result_type)  # Push the result type onto the type stack
 
     def generate_quadruple(self, operator, left_operand, right_operand, result):
-        # Create a quadruple tuple and add it to the list of quadruples
-        quadruple = (operator, left_operand, right_operand, result)
+        # Create a quadruple list and add it to the list of quadruples
+        quadruple = [operator, left_operand, right_operand, result]
         self.quadruples.append(quadruple)
 
         # After adding the quadruple to the list, we need to handle the jump stack
@@ -158,24 +158,26 @@ class Visitor(BabyDuckVisitor):
         return self.operand_stack[-1]
     
     def visitExp(self, ctx: BabyDuckParser.ExpContext):
-        left = self.visit(ctx.termino(0))
+        terminos = ctx.termino()
+        terminos_length = len(terminos)
+        left = self.visit(terminos[0])
         
-        for i in range(1, len(ctx.termino())):
-            operator = ctx.getChild(2 * i - 1).getText() #iterate on list of all children. gets the operator which is always second element each iterator
-            right = self.visit(ctx.termino(i))
+        for i in range(1, terminos_length):
+            operator = ctx.getChild(2 * i - 1).getText()  # Gets the operator
+            right = self.visit(terminos[i])
             
             if right is not None:
-                #create new temporary
+                # Create new temporary
                 temp_var = self.new_temporary()
-                #generate quadruple
+                # Generate quadruple
                 self.generate_quadruple(operator, left, right, temp_var)
                 
-                #result is new temporary
+                # Result is new temporary
                 left = temp_var
-
 
         # Return the last operand, which is the result of the expression.
         return left
+
 
     def process_operator(self):
         right_operand = self.operand_stack.pop()
@@ -282,7 +284,7 @@ class Visitor(BabyDuckVisitor):
         self.quadruples.append(("if_false", condition, None, false_placeholder))
 
         # Visit the body of the if statement
-        self.visit(ctx.body())
+        self.visit(ctx.body(0))
 
         end_if_placeholder = None
         if ctx.else_():
@@ -298,16 +300,67 @@ class Visitor(BabyDuckVisitor):
 
         if ctx.else_():
             # Visit the else body
-            self.visit(ctx.else_().body())
+            self.visit(ctx.body(1))
 
             # Backpatch the end if jump with the actual label
             end_if_label = self.new_label_or_placeholder("label")
             self.backpatch(end_if_placeholder, end_if_label)
 
+        
     def backpatch(self, placeholder, label):
-        for quad in self.quadruples:
+        for i, quad in enumerate(self.quadruples):
             if quad[3] == placeholder:
-                quad[3] = label
+                # Convert the tuple to a list, make the change, then convert back to a tuple
+                quad_list = list(quad)
+                quad_list[3] = label
+                self.quadruples[i] = tuple(quad_list)
+
+
+
+    def backpatch2(self, placeholder, label):
+        for i, quad in enumerate(self.quadruples):
+            if quad[3] == placeholder:
+                self.quadruples[i][3] = label
+#--------------------------------------------------------------
+    def visitCycle(self, ctx: BabyDuckParser.CycleContext):
+        print("Entering cycle")
+        # Generate the start label for the loop and push it onto the jump stack
+        start_label = self.new_label_or_placeholder("label")
+        self.jump_stack.append(("start", start_label))
+        self.generate_quadruple("label", start_label, None, None)
+
+        # Visit the expression to evaluate the loop's condition
+        condition_result = self.visit(ctx.expression())
+
+        # Generate a placeholder for the exit label and push it onto the jump stack
+        exit_label_placeholder = self.new_label_or_placeholder("placeholder")
+        self.jump_stack.append(("end", exit_label_placeholder))
+
+        # Generate an 'if_false' quadruple that will jump to the exit label if the condition is false
+        exit_index = self.generate_quadruple("if_false", condition_result, None, exit_label_placeholder)
+
+        # Visit the body of the loop
+        self.visit(ctx.body())
+
+        # Generate a 'goto' quadruple to jump back to the start of the loop
+        self.generate_quadruple("goto", start_label, None, None)
+
+        # Generate the end label for the loop
+        end_label = self.new_label_or_placeholder("")
+        self.generate_quadruple("label", end_label, None, None)
+
+        # Backpatch the 'if_false' jump to the end label
+        self.backpatch2(exit_index, end_label)
+
+        # Backpatch any 'end' jumps that are still on the jump stack
+        while self.jump_stack and self.jump_stack[-1][0] == "end":
+            _, placeholder = self.jump_stack.pop()
+            self.backpatch2(placeholder, end_label)
+
+        # The cycle does not produce a value, so return None
+        return None
+
+
 #--------------------------------------------------------------
 
     def visitPrint(self, ctx: BabyDuckParser.PrintContext):

@@ -1,71 +1,39 @@
 program CompilerV1;
+var 
+    foo: int; 
+    bar, foobar, barfoo: float;
 
-var foo: int; bar, foobar, barfoo: float;
+void emptyFunction1() [
+    var
+        number1: int;
+    {
+        number1 = 1 + 1 * 1 / (1 + 1);
 
-void emptyFunction() [{}];
-
+        if (number1 > 0) {
+            print("Number 1 es mas grande ", number1);
+        } else {
+            print("Number 1 es mas chico ", number1);
+        };
+    }
+];
 void emptyFunction2(floatNumber: float, intNumber: int) [
     var 
-        number1,i,j: int;
+        number1: int;
         number2: float;
-    
     {
-        number1 = 1 + 2;
-        number2 = (1 + -2) != 3/2;
-        number1 = 1 + 2 / (1 + 2) < assign1;
-        number2 = (69 + 420 / -assign1) > 3;
+        number1 = 0;
+        number2 = 3.0;
 
-        if (condition1) { };
-
-        if (foo != bar) { 
-            foo = 1;
-        } else { 
-            bar = 2;
-        };
-
-        emptyFunction();
-        notEmptyFunction(argument1, 1+2);
-
-                while { } do (emptyWhile < 10);
-        while { 
-            i = bar + 1; 
-            j = foo - 1;
-        
-        } do (foo < 10);
-
-        print(1+2);
-        print(1+2, 2+3, "The quick brown fox jumps over the lazy dog !@#$%^&*()_+][\']");
-    }    
+        while {
+            number1 = number1 + 1;
+        } do (number1 > number2);
+    }
 ];
 
 main 
 { 
-    bar = 1 + 2;
-    foobar = (1 + -2) != 3/2;
-    barfoo = 1 + 2 / (1 + 2) < bar;
-    bar = (69 + 420 / -bar) > 3;
-    
-
-    if (condition1) { };
-
-    if (foo != bar) { 
-        foo = 1;
-    } else { 
-        bar = 2;
-    };
-
-    emptyFunction();
-    notEmptyFunction(argument1, 1+2);
-
-            while { } do (emptyWhile < 10);
-    while { 
-        barfoo = bar + 1; 
-        foobar = foo - 1;
-    
-    } do (foo < 10);
-
-    print(1+2);
-    print(1+2, 2+3, "The quick brown fox jumps over the lazy dog !@#$%^&*()_+][\']");
+    emptyFunction2(2, 3);
+    emptyFunction2(2, 3);
 }
 
 end
