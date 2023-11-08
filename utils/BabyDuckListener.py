@@ -116,6 +116,15 @@ class BabyDuckListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by BabyDuckParser#relop.
+    def enterRelop(self, ctx:BabyDuckParser.RelopContext):
+        pass
+
+    # Exit a parse tree produced by BabyDuckParser#relop.
+    def exitRelop(self, ctx:BabyDuckParser.RelopContext):
+        pass
+
+
     # Enter a parse tree produced by BabyDuckParser#exp.
     def enterExp(self, ctx:BabyDuckParser.ExpContext):
         pass

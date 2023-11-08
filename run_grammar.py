@@ -61,16 +61,29 @@ class Listener(BabyDuckListener):
         #CONDITION
         elif ctx.condition():
             statement_type = "Condition (if-else)"
-            condition_text = ctx.condition().expression().getText()
-            true_body = ctx.condition().body(0).getText()  # Body when condition is true
-            if ctx.condition().body(1):  # Check if there's an 'else' body
-                false_body = ctx.condition().body(1).getText()  # Body when condition is false
-            else:
-                false_body = "None"
-            print(f"Condition: {condition_text}")
-            print(f"If True: {true_body}")
-            print(f"If False: {false_body}")
+            parenthesized_expression_ctx = ctx.condition().expression().getText()
+            print(f"Condition Expression: {parenthesized_expression_ctx}")
 
+            # Check if the true body of the condition is present
+            if ctx.condition().body():
+                # Get the statements within the true body
+                true_body_ctx = ctx.condition().body(0).statement()
+                true_body = ' '.join([statement.getText() for statement in true_body_ctx])
+                print(f"True Body: {true_body}")
+            else:
+                print("No true body found for the condition.")
+
+            # Initialize false_body as None
+            false_body = None
+
+            # Check if there's an 'else' body by counting the number of body contexts
+            if len(ctx.condition().body()) > 1:
+                # Get the statements within the false body
+                false_body_ctx = ctx.condition().body(1).statement()
+                false_body = ' '.join([statement.getText() for statement in false_body_ctx])
+                print(f"False Body: {false_body}")
+            else:
+                print("No false body found for the condition.")
 
         #CYCLE
         elif ctx.cycle():

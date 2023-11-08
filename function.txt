@@ -1,0 +1,29 @@
+program CompilerV1;
+
+var foo: int; bar, foobar, barfoo: float;
+
+void emptyFunction2(floatNumber: float, intNumber: int) [
+    var 
+        number1,i,j: int;
+        number2: float;
+    
+    {
+        i = 1;
+        j = 2;
+        number1 = 0;
+        number2 = 3.0;
+        foo = floatNumber + 1;
+    }    
+];
+
+
+main 
+{ 
+    bar = 1 + 2;
+    foo = (1+2)/3;
+
+    testing(1.0, 1);
+
+}
+
+end     

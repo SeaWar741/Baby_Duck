@@ -69,6 +69,11 @@ class BabyDuckVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by BabyDuckParser#relop.
+    def visitRelop(self, ctx:BabyDuckParser.RelopContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by BabyDuckParser#exp.
     def visitExp(self, ctx:BabyDuckParser.ExpContext):
         return self.visitChildren(ctx)

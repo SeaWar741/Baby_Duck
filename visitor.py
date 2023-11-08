@@ -19,6 +19,8 @@ class Visitor(BabyDuckVisitor):
         self.operator_stack = []
         self.type_stack = []
         self.jump_stack = []
+        self.temp_counter = 0
+        self.label_counter = 0
         self.precedence = {
             "(": 1,
             "+": 2,
@@ -162,7 +164,6 @@ class Visitor(BabyDuckVisitor):
         return self.operand_stack[-1]
     
     def visitExp(self, ctx: BabyDuckParser.ExpContext):
-        print(ctx.getText())
         left = self.visit(ctx.termino(0))
         
         for i in range(1, len(ctx.termino())):
@@ -227,18 +228,17 @@ class Visitor(BabyDuckVisitor):
 
 
     def visitExpression(self, ctx: BabyDuckParser.ExpressionContext):
-        print(ctx.getText())
+        
         if ctx.getChildCount() == 1:
             # If there is only one child, visit it and return the result
             return self.visit(ctx.exp(0))
         
         #visit left and right. Second is the operator
-        elif ctx.getChildCount == 3:
-            print(ctx.getText())
+        elif ctx.getChildCount() == 3 and isinstance(ctx.getChild(1), BabyDuckParser.RelopContext):
             left = self.visit(ctx.exp(0))
             right = self.visit(ctx.exp(1))
 
-            operator = ctx.RELOP().getText()
+            operator = ctx.relop().getText()
 
             temp_var = self.new_temporary()
 
@@ -251,14 +251,25 @@ class Visitor(BabyDuckVisitor):
         
         else:
             #if structure is wrong then error
-            self.printQuadruples()
             raise ValueError(f"Unexpected expression format: {ctx.getText()}")
 
+    def visitF_call(self, ctx: BabyDuckParser.F_callContext): 
+        function_name = ctx.ID().getText()
+        arg_count = 0
+        args = ctx.expression()  # Get the list of expressions passed as arguments
+
+        # Check if there are arguments
+        if args:
+            arg_count = len(args)
+
+            for arg in args:
+                arg_result = self.visit(arg)
+                self.generate_quadruple("param", arg_result, None, None)
+
+        self.generate_quadruple("call", function_name, arg_count, None)
+        return None
 
 
-
-
-    
 
     def visitPrint(self, ctx: BabyDuckParser.PrintContext):
         # Visit all expressions or strings to be printed
