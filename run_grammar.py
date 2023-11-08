@@ -15,15 +15,12 @@ import pandas as pd
 class Listener(BabyDuckListener):
     def __init__(self):
         self.dir_func = DirFunc()
-        self.var_table = VarTable()
+        self.var_tables = {"Global": VarTable()}  # Dictionary of variable tables, one for each scope
         self.scope_stack = ["Global"]  # Initialize with global scope
 
     def exitVars(self, ctx: BabyDuckParser.VarsContext):
-        # Determine the scope
-        if isinstance(ctx.parentCtx, BabyDuckParser.FuncsContext):
-            scope = ctx.parentCtx.ID()[0].getText()
-        else:
-            scope = "Global"
+        # The current scope is the top of the scope stack
+        current_scope = self.scope_stack[-1]
 
         # Iterate over the children of the VarsContext
         for i, child in enumerate(ctx.children):
@@ -36,10 +33,10 @@ class Listener(BabyDuckListener):
                 while j >= 0 and isinstance(ctx.children[j], TerminalNode) and (ctx.children[j].getSymbol().type == BabyDuckLexer.ID or ctx.children[j].getSymbol().type == BabyDuckLexer.COMMA):
                     if ctx.children[j].getSymbol().type == BabyDuckLexer.ID:
                         var_name = ctx.children[j].getText()
-                        print(f"Added variable: {var_name} | type: {var_type} | scope: {scope}")
-                        self.var_table.add_var(var_name, var_type, scope=scope)
+                        print(f"Added variable: {var_name} | type: {var_type} | scope: {current_scope}")
+                        # Add the variable to the current scope's variable table
+                        self.var_tables[current_scope].add_var(var_name, var_type, scope=current_scope)
                     j -= 1
-                    
 
     def exitStatement(self, ctx: BabyDuckParser.StatementContext):
         # Capture the entire text of the statement
@@ -112,30 +109,12 @@ class Listener(BabyDuckListener):
         # Push the function name to the scope stack when entering a function
         func_name = ctx.ID()[0].getText()
         self.scope_stack.append(func_name)
+        # Create a new variable table for this function scope
+        self.var_tables[func_name] = VarTable()
 
     def exitFuncs(self, ctx: BabyDuckParser.FuncsContext):
-        # Extract the function name
-        func_name = ctx.ID()[0].getText()
-
-        # Check if the function is already in the directory of functions
-        if func_name in self.dir_func.df["id-name"].values:
-            #print(f"Error: Multiple declaration of function {func_name}")
-            raise ValueError(f"Error: Multiple declaration of function {func_name}")
-        else:
-            # Add the function to the directory of functions
-            self.dir_func.add_func(func_name, "void", scope="Local")
-
-            # Create a subtable for the function
-            func_var_table = VarTable()
-
-            # Iterate over the children of the FuncsContext
-            for i, child in enumerate(ctx.children):
-                # Check if the child is a COLON token, which indicates the start of a type
-                if isinstance(child, TerminalNode) and child.getSymbol().type == BabyDuckLexer.COLON:
-                    # The next child should be the type
-                    var_type = ctx.children[i + 1].getText()
-                    # Now, extract the associated IDs for this type
-                    j = i - 1
+        # Pop the function name from the scope stack when exiting a function
+        self.scope_stack.pop()
     
     def exitAssign(self, ctx: BabyDuckParser.AssignContext):
         # Check if the variable being assigned to is declared
@@ -146,7 +125,7 @@ class Listener(BabyDuckListener):
     def is_var_declared(self, var_name):
         # Check if a variable is declared in the current scope or any outer scope
         for scope in reversed(self.scope_stack):
-            if self.var_table.df[(self.var_table.df["id-name"] == var_name) & (self.var_table.df["scope"] == scope)].shape[0] > 0:
+            if var_name in self.var_tables[scope].df["id-name"].values:
                 return True
         return False
 
@@ -178,12 +157,22 @@ def main(argv):
         print("SIN ERROES DE SINTAXIS")
         print("---------------------------------------------------------------------\n")
 
-    print("Directory of Functions")
-    print(listener.dir_func.df)
-    print("\nVariable Table")
-    print(listener.var_table.df)    
     print("\n---------------------------------------------------------------------")
     print("PARSING COMPLETE")
+    print("---------------------------------------------------------------------\n")
+
+    # Print the Directory of Functions
+    print("Directory of Functions:")
+    print(listener.dir_func.df)
+
+    # Print the Variable Tables for each scope
+    print("\nVariable Tables by Scope:")
+    for scope, var_table in listener.var_tables.items():
+        print(f"\nScope: {scope}")
+        print(var_table.df)
+
+    print("\n---------------------------------------------------------------------")
+    print("END OF PARSING")
     print("---------------------------------------------------------------------\n")
 
 

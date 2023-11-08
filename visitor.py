@@ -270,6 +270,51 @@ class Visitor(BabyDuckVisitor):
         return None
 
 
+#--------------------------------------------------------------
+
+    def new_label_or_placeholder(self, type):
+        prefix = "L" if type == "label" else "P"
+        value = f"{prefix}{self.label_counter}"
+        self.label_counter += 1
+        return value
+
+    def visitCondition(self, ctx):
+        condition = self.visit(ctx.expression())
+
+        # Generate a placeholder for the false jump
+        false_placeholder = self.new_label_or_placeholder("placeholder")
+
+        # Generate the quadruple for the conditional jump
+        self.quadruples.append(("if_false", condition, None, false_placeholder))
+
+        # Visit the body of the if statement
+        self.visit(ctx.body())
+
+        end_if_placeholder = None
+        if ctx.else_():
+            # Generate a placeholder for the end of the if block
+            end_if_placeholder = self.new_label_or_placeholder("placeholder")
+
+            # Generate the quadruple to jump to the end of the if block
+            self.quadruples.append(("goto", None, None, end_if_placeholder))
+
+        # Backpatch the false jump with the actual label
+        false_jump_label = self.new_label_or_placeholder("label")
+        self.backpatch(false_placeholder, false_jump_label)
+
+        if ctx.else_():
+            # Visit the else body
+            self.visit(ctx.else_().body())
+
+            # Backpatch the end if jump with the actual label
+            end_if_label = self.new_label_or_placeholder("label")
+            self.backpatch(end_if_placeholder, end_if_label)
+
+    def backpatch(self, placeholder, label):
+        for quad in self.quadruples:
+            if quad[3] == placeholder:
+                quad[3] = label
+#--------------------------------------------------------------
 
     def visitPrint(self, ctx: BabyDuckParser.PrintContext):
         # Visit all expressions or strings to be printed
