@@ -66,14 +66,9 @@ class Visitor(BabyDuckVisitor):
             print(f"{i}: {quad}")
 
     def printStacks(self):
-        print("Operand Stack")
+        print("\nOperand Stack")
         print(self.operand_stack)
-        print("Operator Stack")
-        print(self.operator_stack)
-        print("Type Stack")
-        print(self.type_stack)
-        print("Jump Stack")
-        print(self.jump_stack)
+
 
     def new_temporary(self):
         # Generate a new temporary variable
@@ -147,7 +142,6 @@ class Visitor(BabyDuckVisitor):
     
     def visitParenthesized_expression(self, ctx: BabyDuckParser.Parenthesized_expressionContext):
         return self.visit(ctx.expression())
-
 
     def visitFactor(self, ctx: BabyDuckParser.FactorContext):
         if ctx.parenthesized_expression():

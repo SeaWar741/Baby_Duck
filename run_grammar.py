@@ -111,6 +111,10 @@ class Listener(BabyDuckListener):
         self.scope_stack.append(func_name)
         # Create a new variable table for this function scope
         self.var_tables[func_name] = VarTable()
+        
+        # Add the function to the directory of functions
+        func_type = "void"  # Placeholder for function type, adjust as needed
+        self.dir_func.add_func(func_name, func_type, scope=func_name)
 
     def exitFuncs(self, ctx: BabyDuckParser.FuncsContext):
         # Pop the function name from the scope stack when exiting a function
@@ -180,7 +184,7 @@ def main(argv):
     visitor = Visitor()
     visitor.visit(tree)
     visitor.printQuadruples()
-
+    visitor.printStacks()
     
 
 if __name__ == '__main__':
