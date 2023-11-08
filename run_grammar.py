@@ -177,7 +177,6 @@ def main(argv):
     # Create a visitor instance
     visitor = Visitor()
     visitor.visit(tree)
-    visitor.fix_jump_targets()
     visitor.printQuadruples()
 
     
