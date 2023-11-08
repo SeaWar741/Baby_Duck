@@ -4,6 +4,7 @@ var foo: int; bar, foobar, barfoo: float;
 main 
 { 
     bar = 1 + 2;
+    foo = (1+2)/3;
 
     if (condition1) { };
 

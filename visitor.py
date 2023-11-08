@@ -144,8 +144,7 @@ class Visitor(BabyDuckVisitor):
         return temp_var
     
     def visitParenthesized_expression(self, ctx: BabyDuckParser.Parenthesized_expressionContext):
-        if ctx.getChildCount == 1:
-            return self.visit(ctx.expression())
+        return self.visit(ctx.expression())
 
 
     def visitFactor(self, ctx: BabyDuckParser.FactorContext):
@@ -254,6 +253,12 @@ class Visitor(BabyDuckVisitor):
             #if structure is wrong then error
             self.printQuadruples()
             raise ValueError(f"Unexpected expression format: {ctx.getText()}")
+
+
+
+
+
+    
 
     def visitPrint(self, ctx: BabyDuckParser.PrintContext):
         # Visit all expressions or strings to be printed
