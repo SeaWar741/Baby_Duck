@@ -76,15 +76,15 @@ class Directions:
     
 class DirFunc:
     def __init__(self):
-        self.df = pd.DataFrame(columns=["id-name", "scope","var-table"])
+        self.df = pd.DataFrame(columns=["id-name", "scope","var-table","starting_quad","ending_quad"])
         
-    def add_func(self, id_name, func_type, scope="Global"):
+    def add_func(self, id_name, func_type, scope="Global",starting_quad=None,ending_quad=None):
         if id_name in self.df["id-name"].values:
             raise ValueError(f"Error: Multiple declaration of {id_name}")
-        self.df.loc[len(self.df)] = [id_name, func_type, scope]
+        self.df.loc[len(self.df)] = [id_name, func_type, scope,starting_quad,ending_quad]
 
     def delete(self):
-        self.df = pd.DataFrame(columns=["id-name", "scope","var-table"])
+        self.df = pd.DataFrame(columns=["id-name", "scope","var-table","starting_quad","ending_quad"])
 
 class VarTable:
     def __init__(self):

@@ -109,7 +109,6 @@ class Listener(BabyDuckListener):
 
         print("")
 
-    
     def enterFuncs(self, ctx: BabyDuckParser.FuncsContext):
         # Push the function name to the scope stack when entering a function
         func_name = ctx.ID()[0].getText()
