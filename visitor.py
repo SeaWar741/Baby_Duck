@@ -1,13 +1,7 @@
-import sys
 from antlr4 import *
 from antlr4 import TerminalNode
-from utils.BabyDuckLexer import BabyDuckLexer
 from utils.BabyDuckParser import BabyDuckParser
-from utils.BabyDuckListener import BabyDuckListener   
 from utils.BabyDuckVisitor import BabyDuckVisitor
-from antlr4.tree.Trees import Trees
-from semanticAnalyzer import SemanticAnalyzer
-from semanticTable import DirFunc, VarTable
 
 
 
@@ -64,13 +58,14 @@ class Visitor(BabyDuckVisitor):
     #--------------------------------------------------------------
 
     def printQuadruples(self):
-        print("Quadruples")
+        print("Quadruples\n")
         for i, quad in enumerate(self.quadruples):
             print(f"{i}: {quad}")
 
     def printStacks(self):
         print("\nOperand Stack")
         print(self.operand_stack)
+        print()
 
     def new_temporary(self):
         # Generate a new temporary variable
@@ -124,23 +119,23 @@ class Visitor(BabyDuckVisitor):
             self.jump_stack.append(len(self.quadruples) - 1)
     
     def new_label_or_placeholder(self, type):
-        prefix = "L" if type == "label" else "P"
+        prefix = "L" if type == "LABEL" else "P"
         value = f"{prefix}{self.label_counter}"
         self.label_counter += 1
         return value
 
-    def backpatch(self, placeholder, label):
+    def backpatch(self, placeholder, LABEL):
         for i, quad in enumerate(self.quadruples):
             if quad[3] == placeholder:
                 # Convert the tuple to a list, make the change, then convert back to a tuple
                 quad_list = list(quad)
-                quad_list[3] = label
+                quad_list[3] = LABEL
                 self.quadruples[i] = tuple(quad_list)
 
-    def backpatch2(self, placeholder, label):
+    def backpatch2(self, placeholder, LABEL):
         for i, quad in enumerate(self.quadruples):
             if quad[3] == placeholder:
-                self.quadruples[i][3] = label
+                self.quadruples[i][3] = LABEL
 
     #--------------------------------------------------------------
     #MiSCELANEOUS METHODS
@@ -297,9 +292,9 @@ class Visitor(BabyDuckVisitor):
 
             for arg in args:
                 arg_result = self.visit(arg)
-                self.generate_quadruple("param", arg_result, None, None)
+                self.generate_quadruple("PARAM", arg_result, None, None)
 
-        self.generate_quadruple("call", function_name, arg_count, None)
+        self.generate_quadruple("CALL", function_name, arg_count, None)
         return None
 
     def visitCondition(self, ctx):
@@ -309,7 +304,7 @@ class Visitor(BabyDuckVisitor):
         false_placeholder = self.new_label_or_placeholder("placeholder")
 
         # Generate the quadruple for the conditional jump
-        self.quadruples.append(("if_false", condition, None, false_placeholder))
+        self.quadruples.append(("IF_FALSE", condition, None, false_placeholder))
 
         # Visit the body of the if statement
         self.visit(ctx.body(0))
@@ -320,48 +315,47 @@ class Visitor(BabyDuckVisitor):
             end_if_placeholder = self.new_label_or_placeholder("placeholder")
 
             # Generate the quadruple to jump to the end of the if block
-            self.quadruples.append(("goto", None, None, end_if_placeholder))
+            self.quadruples.append(("GOTO", None, None, end_if_placeholder))
 
-        # Backpatch the false jump with the actual label
-        false_jump_label = self.new_label_or_placeholder("label")
+        # Backpatch the false jump with the actual LABEL
+        false_jump_label = self.new_label_or_placeholder("LABEL")
         self.backpatch(false_placeholder, false_jump_label)
 
         if ctx.else_():
             # Visit the else body
             self.visit(ctx.body(1))
 
-            # Backpatch the end if jump with the actual label
-            end_if_label = self.new_label_or_placeholder("label")
+            # Backpatch the end if jump with the actual LABEL
+            end_if_label = self.new_label_or_placeholder("LABEL")
             self.backpatch(end_if_placeholder, end_if_label)
 
     def visitCycle(self, ctx: BabyDuckParser.CycleContext):
-        print("Entering cycle")
-        # Generate the start label for the loop and push it onto the jump stack
-        start_label = self.new_label_or_placeholder("label")
+        # Generate the start LABEL for the loop and push it onto the jump stack
+        start_label = self.new_label_or_placeholder("LABEL")
         self.jump_stack.append(("start", start_label))
-        self.generate_quadruple("label", start_label, None, None)
+        self.generate_quadruple("LABEL", start_label, None, None)
 
         # Visit the expression to evaluate the loop's condition
         condition_result = self.visit(ctx.expression())
 
-        # Generate a placeholder for the exit label and push it onto the jump stack
+        # Generate a placeholder for the exit LABEL and push it onto the jump stack
         exit_label_placeholder = self.new_label_or_placeholder("placeholder")
         self.jump_stack.append(("end", exit_label_placeholder))
 
-        # Generate an 'if_false' quadruple that will jump to the exit label if the condition is false
-        exit_index = self.generate_quadruple("if_false", condition_result, None, exit_label_placeholder)
+        # Generate an 'IF_FALSE' quadruple that will jump to the exit LABEL if the condition is false
+        exit_index = self.generate_quadruple("IF_FALSE", condition_result, None, exit_label_placeholder)
 
         # Visit the body of the loop
         self.visit(ctx.body())
 
-        # Generate a 'goto' quadruple to jump back to the start of the loop
-        self.generate_quadruple("goto", start_label, None, None)
+        # Generate a 'GOTO' quadruple to jump back to the start of the loop
+        self.generate_quadruple("GOTO", start_label, None, None)
 
-        # Generate the end label for the loop
+        # Generate the end LABEL for the loop
         end_label = self.new_label_or_placeholder("")
-        self.generate_quadruple("label", end_label, None, None)
+        self.generate_quadruple("LABEL", end_label, None, None)
 
-        # Backpatch the 'if_false' jump to the end label
+        # Backpatch the 'IF_FALSE' jump to the end LABEL
         self.backpatch2(exit_index, end_label)
 
         # Backpatch any 'end' jumps that are still on the jump stack

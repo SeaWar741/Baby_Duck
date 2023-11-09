@@ -58,9 +58,7 @@ class Directions:
             return self.bools
         elif type == "function":
             return self.functions
-        
     
-
 class DirFunc:
     def __init__(self):
         self.df = pd.DataFrame(columns=["id-name", "scope","var-table"])
@@ -98,3 +96,4 @@ class VarTable:
 
     def delete(self):
         self.df = pd.DataFrame(columns=["id-name", "type", "value", "scope","direction"])
+
