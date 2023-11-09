@@ -304,7 +304,7 @@ class Visitor(BabyDuckVisitor):
         false_placeholder = self.new_label_or_placeholder("placeholder")
 
         # Generate the quadruple for the conditional jump
-        self.quadruples.append(("IF_FALSE", condition, None, false_placeholder))
+        self.quadruples.append(("GOTO_F", condition, None, false_placeholder))
 
         # Visit the body of the if statement
         self.visit(ctx.body(0))
@@ -342,8 +342,8 @@ class Visitor(BabyDuckVisitor):
         exit_label_placeholder = self.new_label_or_placeholder("placeholder")
         self.jump_stack.append(("end", exit_label_placeholder))
 
-        # Generate an 'IF_FALSE' quadruple that will jump to the exit LABEL if the condition is false
-        exit_index = self.generate_quadruple("IF_FALSE", condition_result, None, exit_label_placeholder)
+        # Generate an 'GOTO_F' quadruple that will jump to the exit LABEL if the condition is false
+        exit_index = self.generate_quadruple("GOTO_F", condition_result, None, exit_label_placeholder)
 
         # Visit the body of the loop
         self.visit(ctx.body())
@@ -355,7 +355,7 @@ class Visitor(BabyDuckVisitor):
         end_label = self.new_label_or_placeholder("")
         self.generate_quadruple("LABEL", end_label, None, None)
 
-        # Backpatch the 'IF_FALSE' jump to the end LABEL
+        # Backpatch the 'GOTO_F' jump to the end LABEL
         self.backpatch2(exit_index, end_label)
 
         # Backpatch any 'end' jumps that are still on the jump stack

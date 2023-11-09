@@ -33,6 +33,11 @@ class Listener(BabyDuckListener):
                 while j >= 0 and isinstance(ctx.children[j], TerminalNode) and (ctx.children[j].getSymbol().type == BabyDuckLexer.ID or ctx.children[j].getSymbol().type == BabyDuckLexer.COMMA):
                     if ctx.children[j].getSymbol().type == BabyDuckLexer.ID:
                         var_name = ctx.children[j].getText()
+
+                        #check the last memory direction on global variable table so that they dont overlap (local variable table) 
+                        #TODO!!!
+
+
                         print(f"Added variable: {var_name} | type: {var_type} | scope: {current_scope}")
                         # Add the variable to the current scope's variable table
                         self.var_tables[current_scope].add_var(var_name, var_type, scope=current_scope)

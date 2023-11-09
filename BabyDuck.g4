@@ -25,13 +25,36 @@ f_call: ID LPAREN (expression (COMMA expression)* )? RPAREN SEMICOLON;
 
 expression: exp (relop exp)?;
 relop: GREATERTHAN | LESSTHAN | NOTEQUALS ;
-exp: termino ((PLUS | MINUS) termino)*;
 
-termino: factor ((MULTIPLY | DIVIDE) factor)?;
+
+
+exp: termino ((PLUS | MINUS) termino)*;
+termino: factor ((MULTIPLY | DIVIDE) factor)*;
 
 factor: parenthesized_expression | unary_expression | (ID | cte);
 parenthesized_expression: LPAREN expression RPAREN;
 unary_expression: (MINUS | PLUS) factor;
+
+
+
+/* exp: termino ((PLUS | MINUS) termino)*;
+termino: factor ((MULTIPLY | DIVIDE) factor)?;
+
+factor: parenthesized_expression | unary_expression | (ID | cte);
+parenthesized_expression: LPAREN expression RPAREN;
+unary_expression: (MINUS | PLUS) factor; */
+
+/*
+exp: term (operator exp)*;
+
+term: factor (term_operator term)?;
+
+term_operator: ('*' | '/');
+
+factor: parenthesized_expression | (factor_operator? (ID | cte));
+
+factor_operator: ('+' | '-');
+ */
 
 
 cte: INTEGER | FLOAT_NUM;
