@@ -13,6 +13,10 @@ import pandas as pd
 #directions reserved for ints from 6144 to 7168
 #directions reserved for floats from 7168 to 8192
 
+#RANGE FOR TEMPORALS
+#directions reserved for ints from 8192 to 9216
+#directions reserved for floats from 9216 to 10240
+
 class Directions:
     def __init__(self):
         # ranges as tuples

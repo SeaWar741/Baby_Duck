@@ -52,7 +52,7 @@ class Visitor(BabyDuckVisitor):
                 }
             }
         }
-        
+        self.insert_initial_goto()
     #--------------------------------------------------------------
     #UTILITY METHODS
     #--------------------------------------------------------------
@@ -141,6 +141,13 @@ class Visitor(BabyDuckVisitor):
     #MiSCELANEOUS METHODS
     #--------------------------------------------------------------
 
+    def insert_initial_goto(self):
+        # Crear un marcador de posición para la dirección de 'main'
+        main_placeholder = self.new_label_or_placeholder("placeholder")
+        # Insertar el cuádruplo 'GOTO' al principio de la lista
+        self.generate_quadruple("GOTO", None, None, main_placeholder)
+        return main_placeholder
+    
     def visitCte(self, ctx: BabyDuckParser.CteContext):
         # Return the text of the constant
         return ctx.getText()
@@ -178,6 +185,15 @@ class Visitor(BabyDuckVisitor):
         else:
             #if structure is wrong then error
             raise ValueError(f"Unexpected expression format: {ctx.getText()}")
+    
+    def visitMainSection(self, ctx: BabyDuckParser.MainSectionContext):
+        print("Main Section")
+        #HERE PERFORM THE BACKPATCHING of the GOTO initial
+        main_label = self.new_label_or_placeholder("LABEL")
+        self.backpatch2('P0', main_label)
+        self.visit(ctx.body())
+        # Generate a quadruple for the end of the program
+        self.generate_quadruple("END", None, None, None)
 
 
     #--------------------------------------------------------------
@@ -275,8 +291,7 @@ class Visitor(BabyDuckVisitor):
         # Generate a quadruple for the assignment
         self.generate_quadruple('=', value, None, var_id)
 
-
-
+    
     #--------------------------------------------------------------
     #NON-LINEAR CONTROL FLOW  METHODS
     #--------------------------------------------------------------

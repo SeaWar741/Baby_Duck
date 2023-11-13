@@ -1,7 +1,9 @@
 grammar BabyDuck;
 
 // Parser Rules
-program: 'program' ID SEMICOLON (vars)? (funcs)* main body end;
+program: 'program' ID SEMICOLON (vars)? (funcs)* mainSection;
+
+mainSection: main body end;
 
 vars: 'var' (ID (COMMA ID)* COLON type SEMICOLON)+;
 

@@ -14,6 +14,11 @@ class BabyDuckVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by BabyDuckParser#mainSection.
+    def visitMainSection(self, ctx:BabyDuckParser.MainSectionContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by BabyDuckParser#vars.
     def visitVars(self, ctx:BabyDuckParser.VarsContext):
         return self.visitChildren(ctx)

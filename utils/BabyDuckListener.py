@@ -17,6 +17,15 @@ class BabyDuckListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by BabyDuckParser#mainSection.
+    def enterMainSection(self, ctx:BabyDuckParser.MainSectionContext):
+        pass
+
+    # Exit a parse tree produced by BabyDuckParser#mainSection.
+    def exitMainSection(self, ctx:BabyDuckParser.MainSectionContext):
+        pass
+
+
     # Enter a parse tree produced by BabyDuckParser#vars.
     def enterVars(self, ctx:BabyDuckParser.VarsContext):
         pass

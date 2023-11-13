@@ -1,8 +1,8 @@
 class VirtualMachine:
     def __init__(self, quadruples, global_vars, functions):
         self.quadruples = quadruples
-        self.global_vars = global_vars
-        self.functions = functions
+        self.global_vars = global_vars #variables 
+        self.functions = functions 
         self.temp_vars = {}
         self.instruction_pointer = 0
         self.call_stack = []
@@ -29,7 +29,6 @@ class VirtualMachine:
             self.temp_vars[result] = self.get_value(arg1) + self.get_value(arg2)
         elif op == '-':
             self.temp_vars[result] = self.get_value(arg1) - self.get_value(arg2)
-        # ... handle other operations
         elif op == 'PRINT':
             print(self.get_value(arg1))
         # ... handle other operations
@@ -58,7 +57,7 @@ class VirtualMachine:
 # Example usage:
 quadruples = [
     ('*', '2', '3', 't1'),
-    ('/', 't1', '1', 't2'),  # This will cause a division by zero error
+    ('/', 't1', '1', 't2'), 
     ('+', 't1', '5', 't3'),
     ('PRINT', 't3', None, None),
 ]
@@ -72,3 +71,7 @@ functions = {}
 
 vm = VirtualMachine(quadruples, global_vars, functions)
 vm.run()
+
+
+#cambiar nombres por direcciones segun mis rangos
+#en la ejecucion hay codigo de operacion 2 direcciones de los operandos y la direccion del resultado
