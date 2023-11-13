@@ -66,8 +66,8 @@ def main(argv):
     print("---------------------------------------------------------------------\n")
 
     # Create an instance of virtual machine
-    #vm = VirtualMachine(visitor.quadruples, var_tables, functions_directory)
-    #vm.run()
+    vm = VirtualMachine(visitor.quadruples, visitor.varTables, visitor.functions_directory,visitor.type_dict,visitor.operand_stack)
+    vm.run()
 
 
 
