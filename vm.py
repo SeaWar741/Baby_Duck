@@ -46,17 +46,17 @@ class VirtualMachine:
 
         self.var_types = var_types
 
-        self.reserved_words = ["GOTO","CALL","END","PARAM","GOTO_F","GOTO_T","ERA","GOSUB","RETURN","ENDPROC"]
+        self.reserved_words = ["GOTO","CALL","END","PARAM","GOTO_F","GOTO_T","ERA","GOSUB","RETURN","ENDPROC","PRINT"]
 
         #temporals ranges
         self.temporal_ints_global = (8192, 9215)
         self.temporal_floats_global = (9216, 10240)
-        self.temporal_bools_global = (10240, 11263)
+        self.temporal_bools_global = (10241, 11263)
 
 
         self.temporal_ints_local = (11264, 12287)
         self.temporal_floats_local = (12288, 13312)
-        self.temporal_bools_local = (13312, 14335)
+        self.temporal_bools_local = (13313, 14335)
 
 
         #constants ranges
@@ -250,59 +250,80 @@ class VirtualMachine:
             translated_quad = []
             count = 0
 
-
             if len(quad) > 4:
 
                 #if first element in quad is a CALL then dont translate
-                if quad[0] not in self.reserved_words:
-                    for element in quad:
-                        if count < 4:
-                            if element == None:
-                                translated_quad.append(None)
-                            elif element == "PRINT":
-                                translated_quad.append("PRINT")
-                            elif self.is_operator(element):
-                                # Operators might not need translation
-                                translated_quad.append(element)
-                            elif self.is_label_or_function_name(element):
-                                # Labels and function names might not need translation
+
+                for element in quad:
+                    if count < 4:
+                        if element == None:
+                            translated_quad.append(None)
+                        elif element in self.reserved_words:
+                            translated_quad.append(element)
+                        elif self.is_operator(element):
+                            # Operators might not need translation
+                            translated_quad.append(element)
+                        elif self.is_label_or_function_name(element):
+                            # Labels and function names might not need translation
+                            translated_quad.append(element)
+                            self.operand_stack.append(element)
+                        elif self.is_variable(element):
+                            translated_var = self.translate_variable(element)
+                            translated_quad.append(translated_var)
+                            self.operand_stack.append(translated_var)
+                        elif element.startswith('_t'):
+                            #check if the element is already in temporals_values as value. not as key
+                            if element in self.temporals_values.values():
+                                #if it is, then just append the memory address
+                                
                                 translated_quad.append(element)
                                 self.operand_stack.append(element)
-                            elif self.is_variable(element):
-                                translated_var = self.translate_variable(element)
-                                translated_quad.append(translated_var)
-                                self.operand_stack.append(translated_var)
-                            elif element.startswith('_t'):
-                                #check if the element is already in temporals_values as value. not as key
-                                if element in self.temporals_values.values():
-                                    #if it is, then just append the memory address
-                                    
-                                    translated_quad.append(element)
-                                    self.operand_stack.append(element)
-                                else:
-                                    #if it is not, then assign a memory address to the temporal
-                                    #and append the memory address
-                                    address = self.assignAddressTemporals(element,self.var_types[element],quad[4])
-                                    self.temporals_values[address] = None
-                                    translated_quad.append(address)
-                                    self.operand_stack.append(address)
                             else:
-                                # Constants might not need translation
-
-                                address = self.translate_constant(element)
-
+                                #if it is not, then assign a memory address to the temporal
+                                #and append the memory address
+                                address = self.assignAddressTemporals(element,self.var_types[element],quad[4])
+                                self.temporals_values[address] = None
                                 translated_quad.append(address)
                                 self.operand_stack.append(address)
+                        else:
+                            # Constants might not need translation
 
-                        count += 1
-                else:
-                    #if the first element is a CALL then dont translate
-                    translated_quad = quad[0:4]
+                            address = self.translate_constant(element)
+
+                            translated_quad.append(address)
+                            self.operand_stack.append(address)
+
+                    count += 1
+
             else:
-                #instructions only no need to translate
-                self.operand_stack.append(quad[0])
-                translated_quad = quad
-               
+                print("QUAD INSTRUCTION")
+                for element in quad:
+                    if element == None:
+                        translated_quad.append(None)
+                    elif self.is_label_or_function_name(element):
+                        # Labels and function names might not need translation
+                        translated_quad.append(element)
+                        self.operand_stack.append(element)
+                    elif self.is_variable(element):
+                        translated_var = self.translate_variable(element)
+                        translated_quad.append(translated_var)
+                        self.operand_stack.append(translated_var)
+                    elif element.startswith('_t'):
+                        #check if the element is already in temporals_values as value. not as key
+                        if element in self.temporals_values.values():
+                            #if it is, then just append the memory address
+                            
+                            translated_quad.append(element)
+                            self.operand_stack.append(element)
+                        else:
+                            #if it is not, then assign a memory address to the temporal
+                            #and append the memory address
+                            address = self.assignAddressTemporals(element,self.var_types[element],"Global")
+                            self.temporals_values[address] = None
+                            translated_quad.append(address)
+                            self.operand_stack.append(address)
+
+                    
             self.memory_quadruples.append(translated_quad)
 
 
@@ -383,8 +404,6 @@ class VirtualMachine:
                 if memory_address in var_table.df['direction'].values:
                     var_table.df.loc[var_table.df['direction'] == memory_address, 'value'] = value
 
-        
-
     def getValue(self, memory_address):
         #check if the memory address is in the temporals_values
         if memory_address in self.temporals_values.keys():
@@ -413,59 +432,92 @@ class VirtualMachine:
                 for key, value in self.temporals_values.items():
                     if value == memory_address:
                         return key
-        
+    
 
+    #TODO FIX THIS
+    def findQuadruple_index(self,quad):
+        #find the index of the quadruple in the memory_quadruples based on the placeholders_values. 
+        #meaning i have as target P3, i should find the index where P4 or L4 is in the quadruple. The L and P are the same
+        #so i can go and execute the quadruple after the placeholder
+        
+        for index, quad in enumerate(self.memory_quadruples):
+            if quad[0] == "LABEL" or quad[0] == "GOTO" or quad[0] == "CALL" or quad[0] == "PARAM" or quad[0] == "GOTO_F":
+                if quad[1] == self.placeholders_values[quad[1]]:
+                    return index
+                
+        #if nothing is found it means that the Lable, Placeholder or GOTO is the last target so execute the next quadruple
+        return self.instruction_pointer
 
     def execute_quadruple(self, quad):
-        op, left_operand, right_operand, result = quad
-
-        #print("Attempting to execute quadruple: ", quad)
-        #self.printstacks()
-
-        left_value = self.getValue(left_operand)
-        right_value = self.getValue(right_operand)
-
-        # Assignment operation
-        if op == "=":
-            value = self.getValue(left_operand)
-            self.setValue(result, value)
-
-        # Arithmetic operations
-        elif op in ['+', '-', '*', '/']:
-
-            if op == '+':
-                result_value = left_value + right_value
-            elif op == '-':
-                result_value = left_value - right_value
-            elif op == '*':
-                result_value = left_value * right_value
-            elif op == '/':
-                result_value = left_value / right_value
-
-            self.setValue(result, result_value)
-
-        # Relational operations
-        elif op in ['>', '<', '>=', '<=', '!=']:
-
-            if op == '>':
-                result_value = left_value > right_value
-            elif op == '<':
-                result_value = left_value < right_value
-            elif op == '>=':
-                result_value = left_value >= right_value
-            elif op == '<=':
-                result_value = left_value <= right_value
-            elif op == '!=':
-                result_value = left_value != right_value
-
-            self.setValue(result, result_value)
         
-        # Print operation
-        elif op == 'PRINT':
-            print(left_value)
+        if len(quad) == 4:
+            op, left_operand, right_operand, result = quad
+
+            print("Attempting to execute quadruple: ", quad)
+            self.printstacks()
+
+            left_value = self.getValue(left_operand)
+            right_value = self.getValue(right_operand)
+
+            # Assignment operation
+            if op == "=":
+                value = self.getValue(left_operand)
+                self.setValue(result, value)
+
+            # Arithmetic operations
+            elif op in ['+', '-', '*', '/']:
+
+                if op == '+':
+                    result_value = left_value + right_value
+                elif op == '-':
+                    result_value = left_value - right_value
+                elif op == '*':
+                    result_value = left_value * right_value
+                elif op == '/':
+                    #check for division by zero
+                    if right_value == 0:
+                        raise ValueError("Division by zero")
+                    else:
+
+                        result_value = left_value / right_value
+
+                self.setValue(result, result_value)
+
+            # Relational operations
+            elif op in ['>', '<', '>=', '<=', '!=']:
+
+                if op == '>':
+                    result_value = left_value > right_value
+                elif op == '<':
+                    result_value = left_value < right_value
+                elif op == '>=':
+                    result_value = left_value >= right_value
+                elif op == '<=':
+                    result_value = left_value <= right_value
+                elif op == '!=':
+                    result_value = left_value != right_value
+
+                self.setValue(result, result_value)
+            
+            # Print operation
+            elif op == 'PRINT':
+                print(left_value)
+        
+        elif len(quad) == 3:
+            op, left_operand, result = quad
+
+            # Control flow operations
+            if op in ['GOTO', 'GOTO_F', 'GOTO_T']:
+                # GOTO_F operation
+                if op == 'GOTO_F':
+                    print("GOTO_F HANDLING")
+                    #new_index = self.findQuadruple_index(quad)
+                    #print("GOTO_F: ",self.memory_quadruples[new_index])
+                if op == 'GOTO_T':
+                    print("GOTO_T HANDLING")
 
 
-
+                    
 
 
 
@@ -476,14 +528,23 @@ class VirtualMachine:
             self.execute_quadruple(quad)
             self.instruction_pointer += 1
 
+
+
     def run(self):
         # Translate quadruples
         self.translate_quadruples()
         self.printTranslatedQuadruples()
+
+        print("\n-----------------------------------------------------------------------")
+        print("CODE EXECUTION")
+        print("-----------------------------------------------------------------------")
+
         # Execute quadruples
         self.execute_quadruples()
 
-
+        print("-----------------------------------------------------------------------")
+        print("CODE EXECUTION FINISHED")
+        print("-----------------------------------------------------------------------")
         #print varTables
         for scope, var_table in self.varTables.items():
             print(f"\n{scope} varTable:")

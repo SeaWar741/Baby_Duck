@@ -459,7 +459,7 @@ class Visitor(BabyDuckVisitor):
             end_if_placeholder = self.new_label_or_placeholder("placeholder")
 
             # Generate the quadruple to jump to the end of the if block
-            self.quadruples.append(("GOTO", None, None, end_if_placeholder))
+            self.quadruples.append(("GOTO_T", None, None, end_if_placeholder))
 
         # Backpatch the false jump with the actual LABEL
         false_jump_label = self.new_label_or_placeholder("LABEL")

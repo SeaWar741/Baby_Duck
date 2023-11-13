@@ -4,8 +4,7 @@ var foo: int; bar, foobar, barfoo: float;
 main 
 { 
     bar = 1 + 2;
-    foo = (1+2)/3;
-
+    foo = (1+2)/3;  
 
     print(1+2);
     print(1+2, 2+3, "The quick brown fox jumps over the lazy dog !@#$%^&*()_+][\']");
