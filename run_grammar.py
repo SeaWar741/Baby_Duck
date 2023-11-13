@@ -56,7 +56,7 @@ def main(argv):
 
 
     # Create a visitor instance
-    visitor = Visitor(var_tables)
+    visitor = Visitor(var_tables, functions_directory)
     visitor.visit(tree)
     visitor.printQuadruples()
     visitor.printStacks()

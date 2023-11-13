@@ -6,7 +6,7 @@ from utils.BabyDuckVisitor import BabyDuckVisitor
 
 
 class Visitor(BabyDuckVisitor):
-    def __init__(self,var_tables):
+    def __init__(self,var_tables,functions_directory):
         self.temp_counter = 0
         self.quadruples = []
         self.operand_stack = []
@@ -66,10 +66,9 @@ class Visitor(BabyDuckVisitor):
             }
         }
         self.scope = "Global"
-
+        self.quadCounter = 0
+        self.functions_directory = functions_directory
         self.varTables = var_tables
-        self.global_vars = var_tables['Global'].df
-
         self.insert_initial_goto()
 
 
@@ -88,8 +87,10 @@ class Visitor(BabyDuckVisitor):
         print("\nOperand Stack")
         print(self.operand_stack)
         print()
-        print("Type Stack")
-        print(self.type_dict)
+        #print("Type Dictionary")
+        #print(self.type_dict)
+        print("Function Directory")
+        print(self.functions_directory)
 
     def new_temporary(self):
         # Generate a new temporary variable
@@ -126,10 +127,10 @@ class Visitor(BabyDuckVisitor):
         self.generate_quadruple(operator, left_operand, right_operand, temp_var)
 
     def generate_quadruple(self, operator, left_operand, right_operand, result,targetType=None):
-
-        print(f"({operator},{left_operand},{right_operand},{result},{self.scope},{targetType})")
-        print(self.operand_stack)
-        print(self.type_dict)
+        
+        #print(f"({operator},{left_operand},{right_operand},{result},{self.scope},{targetType})")
+        #print(self.operand_stack)
+        #print(self.type_dict)
         # Create a quadruple list and add it to the list of quadruples
         quadruple = [operator, left_operand, right_operand, result, self.scope, targetType]
         self.quadruples.append(quadruple)
@@ -138,6 +139,8 @@ class Visitor(BabyDuckVisitor):
         # for control flow operations like if-else and loops.
         if operator in ['JMPF', 'JMP', 'JMPT']:
             self.jump_stack.append(len(self.quadruples) - 1)
+
+        self.quadCounter += 1
     
     def new_label_or_placeholder(self, type):
         prefix = "L" if type == "LABEL" else "P" #labels and placeholders are continuous, meaning they share the counter
@@ -160,10 +163,7 @@ class Visitor(BabyDuckVisitor):
     
     def lookup_type_from_variable(self, variable_name):
         # Implement the logic to find the type from a variable name
-        # Check in global variables
-        if variable_name in self.global_vars['id-name'].values:
-            return self.global_vars.loc[self.global_vars['id-name'] == variable_name]['type'].values[0]
-        #check in other variable tables
+        # Check in variable tables
         for scope, var_table in self.varTables.items():
             if variable_name in var_table.df['id-name'].values:
                 return var_table.df.loc[var_table.df['id-name'] == variable_name]['type'].values[0]
@@ -282,7 +282,14 @@ class Visitor(BabyDuckVisitor):
     def visitFuncs(self, ctx: BabyDuckParser.FuncsContext):
         #set scope
         self.scope = ctx.ID()[0].getText()
+        #set the starting quadruple for this function in the directory
+        self.functions_directory.loc[self.functions_directory['id-name'] == self.scope,'starting_quad'] = self.quadCounter
+        
         self.visit(ctx.body())
+        
+        #set the ending quadruple for this function in the directory
+        self.functions_directory.loc[self.functions_directory['id-name'] == self.scope,'ending_quad'] = self.quadCounter
+
     #--------------------------------------------------------------
     #ARITHMETIC METHODS
     #--------------------------------------------------------------
