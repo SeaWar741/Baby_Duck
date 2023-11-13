@@ -53,9 +53,11 @@ class VirtualMachine:
         self.temporal_floats_global = (9216, 10240)
         self.temporal_bools_global = (10240, 11263)
 
+
         self.temporal_ints_local = (11264, 12287)
         self.temporal_floats_local = (12288, 13312)
         self.temporal_bools_local = (13312, 14335)
+
 
         #constants ranges
         self.constant_ints = (14336, 15359)
@@ -63,8 +65,17 @@ class VirtualMachine:
         self.constant_bools = (16384, 17407)
         self.constant_strings = (17408, 18431)
 
+
         #placeholder/label ranges
         self.placeholders = (18432, 19455)
+
+        self.placeholders_range_ranges = [self.placeholders]
+
+        self.int_ranges = [self.temporal_ints_global,self.temporal_ints_local,self.constant_ints]
+        self.float_ranges = [self.temporal_floats_global,self.temporal_floats_local,self.constant_floats]
+        self.bool_ranges = [self.temporal_bools_global,self.temporal_bools_local,self.constant_bools]
+        self.string_ranges = [self.constant_strings]
+        self.placeholder_ranges = [self.placeholders]
 
 
         self.temporals_values = {} #dictionary of temporals values key = memory address, value = (value,name)
@@ -136,7 +147,6 @@ class VirtualMachine:
             else:
                 memory_address = self.temporal_ints_local[0]
                 self.temporal_ints_local = (self.temporal_ints_local[0] + 1, self.temporal_ints_local[1])
-            # ... (similar for 'float' and 'bool')
         elif temporal_type == 'float':
             if scope == 'Global':
                 memory_address = self.temporal_floats_global[0]
@@ -156,15 +166,12 @@ class VirtualMachine:
         
         # Add the temporal to the temporals_values dictionary
         self.temporals_values[temporal] = memory_address
-
         #add the temporal to the temporals_data dictionary
         self.temporals_data[memory_address] = None
 
         # Return the memory address
         return memory_address
-        
-            
-            
+               
 
     def getConstantType(self,constant):
         #checks if its numeric using regex
@@ -186,6 +193,21 @@ class VirtualMachine:
         else:
             print("ERROR: Invalid constant type "+constant)
 
+    def printstacks(self):
+        print("\nOperand Stack:")
+        print(self.operand_stack)
+        print("\nTemporals Values:")
+        print(self.temporals_values)
+        print("\nTemporals Data:")
+        print(self.temporals_data)
+        print("\nConstants Values:")
+        print(self.constants_values)
+        print("\nConstants Data:")
+        print(self.constants_data)
+        print("\nPlaceholders Values:")
+        print(self.placeholders_values)
+        print("\nPlaceholders Data:")
+        print(self.placeholders_data)
 
     def assignAddressConstants(self, constant):
         # Determine the range to use based on the type and scope
@@ -302,9 +324,43 @@ class VirtualMachine:
             return False
         else:
             return True
-        
+
+    def check_in_range(self,element,start,end):
+        #checks if element is in range
+        if element >= start and element <= end:
+            return True
+        else:
+            return False
 
     def setValue(self, memory_address, value):
+
+        #check the ranges of the memory address to know what type of value it is and cast it
+        for range in self.int_ranges:
+            if self.check_in_range(memory_address,range[0],range[1]):
+                value = int(value)
+                break
+        for range in self.float_ranges:
+            if self.check_in_range(memory_address,range[0],range[1]):
+                value = float(value)
+                break
+        for range in self.bool_ranges:
+            if self.check_in_range(memory_address,range[0],range[1]):
+                if value == "true":
+                    value = True
+                elif value == "false":
+                    value = False
+                break
+        for range in self.string_ranges:
+            if self.check_in_range(memory_address,range[0],range[1]):
+                value = str(value)
+                break
+        for range in self.placeholder_ranges:
+            if self.check_in_range(memory_address,range[0],range[1]):
+                value = str(value)
+                break
+
+
+    
         #if its on the temporals_values then set the value in temporals_data
         if memory_address in self.temporals_values.keys():
             self.temporals_data[memory_address] = value
@@ -363,7 +419,11 @@ class VirtualMachine:
     def execute_quadruple(self, quad):
         op, left_operand, right_operand, result = quad
 
-        print("Attempting to execute quadruple: ", quad)
+        #print("Attempting to execute quadruple: ", quad)
+        #self.printstacks()
+
+        left_value = self.getValue(left_operand)
+        right_value = self.getValue(right_operand)
 
         # Assignment operation
         if op == "=":
@@ -372,8 +432,6 @@ class VirtualMachine:
 
         # Arithmetic operations
         elif op in ['+', '-', '*', '/']:
-            left_value = self.getValue(left_operand)
-            right_value = self.getValue(right_operand)
 
             if op == '+':
                 result_value = left_value + right_value
@@ -385,7 +443,28 @@ class VirtualMachine:
                 result_value = left_value / right_value
 
             self.setValue(result, result_value)
+
+        # Relational operations
+        elif op in ['>', '<', '>=', '<=', '!=']:
+
+            if op == '>':
+                result_value = left_value > right_value
+            elif op == '<':
+                result_value = left_value < right_value
+            elif op == '>=':
+                result_value = left_value >= right_value
+            elif op == '<=':
+                result_value = left_value <= right_value
+            elif op == '!=':
+                result_value = left_value != right_value
+
+            self.setValue(result, result_value)
         
+        # Print operation
+        elif op == 'PRINT':
+            print(left_value)
+
+
 
 
 
