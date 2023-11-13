@@ -4,7 +4,7 @@ var foo: int;
 
 main 
 { 
-    foo = 2+1;
+    foo = 2+2;
 
 }
 

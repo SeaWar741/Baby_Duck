@@ -143,7 +143,7 @@ class VirtualMachine:
             raise ValueError("Invalid temporal type")
 
         # Add the temporal to the temporals_values dictionary
-        self.temporals_values[temporal] = memory_address
+        self.temporals_values[memory_address] = temporal
 
         # Return the memory address
         return memory_address
@@ -169,7 +169,6 @@ class VirtualMachine:
             print("ERROR: Invalid constant type "+constant)
 
 
-    #TENTATIVE
     def assignAddressConstants(self, constant):
         # Determine the range to use based on the type and scope
         constant_type = self.getConstantType(constant)
@@ -298,23 +297,63 @@ class VirtualMachine:
                 if memory_address in var_table.df['direction'].values:
                     var_table.df.loc[var_table.df['direction'] == memory_address, 'value'] = value
 
-
-
-    
+    def getValue(self, memory_address):
+        #get the value of the variable on the memory address. check the varTables,temporals_values,constants
+        #check if the memory address is in the global varTable
+        if memory_address in self.global_vars['direction'].values:
+            return self.global_vars.loc[self.global_vars['direction'] == memory_address, 'value'].values[0]
+        else:
+            #check in other variable tables
+            for scope, var_table in self.varTables.items():
+                if memory_address in var_table.df['direction'].values:
+                    return var_table.df.loc[var_table.df['direction'] == memory_address, 'value'].values[0]
+            #check if the memory address is in the temporals_values
+            if memory_address in self.temporals_values.keys():
+                return self.temporals_values[memory_address]
+            else:
+                #check if the memory address is in the constants
+                for key, value in self.temporals_values.items():
+                    if value == memory_address:
+                        return key
         
 
 
-    def execute_quadruple(self,quad):
+    def execute_quadruple(self, quad):
         op, left_operand, right_operand, result = quad
 
-        #TODO
+        print("Attempting to execute quadruple: ", quad)
+
+        # Assignment operation
+        if op == "=":
+            value = self.getValue(left_operand)
+            self.setValue(result, value)
+
+        # Arithmetic operations
+        elif op in ['+', '-', '*', '/']:
+            left_value = self.getValue(left_operand)
+            right_value = self.getValue(right_operand)
+
+            if op == '+':
+                result_value = left_value + right_value
+            elif op == '-':
+                result_value = left_value - right_value
+            elif op == '*':
+                result_value = left_value * right_value
+            elif op == '/':
+                result_value = left_value / right_value
+
+            self.setValue(result, result_value)
+        
 
 
 
 
     def execute_quadruples(self):
-        for quad in self.memory_quadruples:
+        #execute quadruples with instruction pointer
+        while self.instruction_pointer < len(self.memory_quadruples):
+            quad = self.memory_quadruples[self.instruction_pointer]
             self.execute_quadruple(quad)
+            self.instruction_pointer += 1
 
     def run(self):
         # Translate quadruples
