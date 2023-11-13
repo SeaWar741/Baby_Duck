@@ -137,17 +137,6 @@ class Visitor(BabyDuckVisitor):
         
         self.quadCounter += 1
 
-
-    def process_operator(self):
-        right_operand = self.operand_stack.pop()
-        left_operand = self.operand_stack.pop()
-        operator = self.operator_stack.pop()
-
-
-        self.generate_quadruple(operator, left_operand, right_operand, temp_var, result_type)
-
-
-
     
     def new_label_or_placeholder(self, type):
         prefix = "L" if type == "LABEL" else "P" #labels and placeholders are continuous, meaning they share the counter
@@ -204,9 +193,9 @@ class Visitor(BabyDuckVisitor):
 
         
         self.operand_stack.append(temp_var)
-        
+                
 
-        self.generate_quadruple(operator, left_operand, right_operand, temp_var, result_type)
+        self.generate_quadruple(operator, left_operand, right_operand, temp_var)
 
 
     def visitExpression(self, ctx: BabyDuckParser.ExpressionContext):
@@ -359,8 +348,13 @@ class Visitor(BabyDuckVisitor):
         value = self.visit(ctx.expression())
         # The ID to which the value is assigned
         var_id = ctx.ID().getText()
+
+        #get the type of the variable
+        var_type = self.lookup_type_from_variable(var_id)
+
+
         # Generate a quadruple for the assignment
-        self.generate_quadruple('=', value, None, var_id)
+        self.generate_quadruple('=', value, None, var_id,var_type)
 
     def visitVar(self, ctx: BabyDuckParser.VarsContext):
         # The ID to which the value is assigned
