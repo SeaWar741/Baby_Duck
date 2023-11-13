@@ -6,7 +6,6 @@ from utils.BabyDuckParser import BabyDuckParser
 from utils.BabyDuckListener import BabyDuckListener   
 from utils.BabyDuckVisitor import BabyDuckVisitor
 from antlr4.tree.Trees import Trees
-from semanticAnalyzer import SemanticAnalyzer
 from semanticTable import DirFunc, VarTable
 from visitor import Visitor
 import pandas as pd
