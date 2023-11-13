@@ -67,7 +67,8 @@ class Visitor(BabyDuckVisitor):
         }
         self.scope = "Global"
 
-        self.var_tables = var_tables
+        self.varTables = var_tables
+        self.global_vars = var_tables['Global'].df
 
         self.insert_initial_goto()
 
@@ -87,6 +88,8 @@ class Visitor(BabyDuckVisitor):
         print("\nOperand Stack")
         print(self.operand_stack)
         print()
+        print("Type Stack")
+        print(self.type_stack)
 
     def new_temporary(self):
         # Generate a new temporary variable
@@ -149,6 +152,16 @@ class Visitor(BabyDuckVisitor):
         for i, quad in enumerate(self.quadruples):
             if quad[3] == placeholder:
                 self.quadruples[i][3] = LABEL
+    
+    def lookup_type_from_variable(self, variable_name):
+        # Implement the logic to find the type from a variable name
+        # Check in global variables
+        if variable_name in self.global_vars['id-name'].values:
+            return self.global_vars.loc[self.global_vars['id-name'] == variable_name]['type'].values[0]
+        #check in other variable tables
+        for scope, var_table in self.varTables.items():
+            if variable_name in var_table.df['id-name'].values:
+                return var_table.df.loc[var_table.df['id-name'] == variable_name]['type'].values[0]
 
     #--------------------------------------------------------------
     #MiSCELANEOUS METHODS
@@ -313,8 +326,18 @@ class Visitor(BabyDuckVisitor):
         value = self.visit(ctx.expression())
         # The ID to which the value is assigned
         var_id = ctx.ID().getText()
+
+        # Get the type of the variable
+        var_type = self.lookup_type_from_variable(var_id)
+
+        #append to operand stack
+        self.operand_stack.append(var_id)
+
+        #append to type stack
+        self.type_stack.append(var_type)
+    
         # Generate a quadruple for the assignment
-        self.generate_quadruple('=', value, None, var_id)
+        self.generate_quadruple('=', value, None, var_id,var_type)
 
     def visitVar(self, ctx: BabyDuckParser.VarsContext):
         # Visit the expression to evaluate it and push the result onto the operand stack
