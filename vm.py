@@ -130,34 +130,44 @@ class VirtualMachine:
             translated_quad = []
             count = 0
 
-            for element in quad:
-                if count < 4:
-                    if element == None:
-                        translated_quad.append(None)
-                    elif self.is_operator(element):
-                        # Operators might not need translation
-                        translated_quad.append(element)
-                    elif self.is_label_or_function_name(element):
-                        # Labels and function names might not need translation
-                        translated_quad.append(element)
-                    elif self.is_variable(element):
-                        translated_quad.append(self.translate_variable(element))
-                    elif element.startswith('_t'):
-                        #check if the element is already in temporals_values as value. not as key
-                        if element in self.temporals_values.values():
-                            #if it is, then just append the memory address
-                            translated_quad.append(element)
-                        else:
-                            #if it is not, then assign a memory address to the temporal
-                            #and append the memory address
-                            address = self.assignAddressTemporals(element,self.var_types[element],quad[4])
-                            self.temporals_values[address] = None
-                            translated_quad.append(address)
-                    else:
-                        # Constants might not need translation
-                        translated_quad.append(element)
+            if len(quad) > 4:
 
-                count += 1
+                #if first element in quad is a CALL then dont translate
+                if quad[0] != "CALL":
+                    for element in quad:
+                        if count < 4:
+                            if element == None:
+                                translated_quad.append(None)
+                            elif self.is_operator(element):
+                                # Operators might not need translation
+                                translated_quad.append(element)
+                            elif self.is_label_or_function_name(element):
+                                # Labels and function names might not need translation
+                                translated_quad.append(element)
+                            elif self.is_variable(element):
+                                translated_quad.append(self.translate_variable(element))
+                            elif element.startswith('_t'):
+                                #check if the element is already in temporals_values as value. not as key
+                                if element in self.temporals_values.values():
+                                    #if it is, then just append the memory address
+                                    translated_quad.append(element)
+                                else:
+                                    #if it is not, then assign a memory address to the temporal
+                                    #and append the memory address
+                                    address = self.assignAddressTemporals(element,self.var_types[element],quad[4])
+                                    self.temporals_values[address] = None
+                                    translated_quad.append(address)
+                            else:
+                                # Constants might not need translation
+                                translated_quad.append(element)
+
+                        count += 1
+                else:
+                    #if the first element is a CALL then dont translate
+                    translated_quad = quad[0:4]
+            else:
+                #instructions only no need to translate
+                translated_quad = quad
                
             self.memory_quadruples.append(translated_quad)
 
@@ -165,8 +175,13 @@ class VirtualMachine:
             print("------------------------------------------------------------------------")
             print("QuadT: ",quad)
             print("QuadT: ",translated_quad)
-            #self.printVarTables()
+
+    def printTranslatedQuadruples(self):
+        print("\nTranslated Quadruples:")
+        for quad in self.memory_quadruples:
+            print(quad)
 
     def run(self):
         # Translate quadruples
         self.translate_quadruples()
+        self.printTranslatedQuadruples()
