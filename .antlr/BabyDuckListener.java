@@ -17,6 +17,16 @@ public interface BabyDuckListener extends ParseTreeListener {
 	 */
 	void exitProgram(BabyDuckParser.ProgramContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link BabyDuckParser#mainSection}.
+	 * @param ctx the parse tree
+	 */
+	void enterMainSection(BabyDuckParser.MainSectionContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link BabyDuckParser#mainSection}.
+	 * @param ctx the parse tree
+	 */
+	void exitMainSection(BabyDuckParser.MainSectionContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link BabyDuckParser#vars}.
 	 * @param ctx the parse tree
 	 */

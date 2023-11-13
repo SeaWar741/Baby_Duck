@@ -28,6 +28,18 @@ public class BabyDuckBaseListener implements BabyDuckListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterMainSection(BabyDuckParser.MainSectionContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitMainSection(BabyDuckParser.MainSectionContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterVars(BabyDuckParser.VarsContext ctx) { }
 	/**
 	 * {@inheritDoc}

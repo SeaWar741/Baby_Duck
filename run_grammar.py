@@ -56,7 +56,7 @@ def main(argv):
 
 
     # Create a visitor instance
-    visitor = Visitor()
+    visitor = Visitor(var_tables)
     visitor.visit(tree)
     visitor.printQuadruples()
     visitor.printStacks()
@@ -66,8 +66,8 @@ def main(argv):
     print("---------------------------------------------------------------------\n")
 
     # Create an instance of virtual machine
-    vm = VirtualMachine(visitor.quadruples, var_tables, functions_directory)
-    vm.run()
+    #vm = VirtualMachine(visitor.quadruples, var_tables, functions_directory)
+    #vm.run()
 
 
 

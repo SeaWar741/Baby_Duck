@@ -6,7 +6,7 @@ from utils.BabyDuckVisitor import BabyDuckVisitor
 
 
 class Visitor(BabyDuckVisitor):
-    def __init__(self):
+    def __init__(self,varTables):
         self.temp_counter = 0
         self.quadruples = []
         self.operand_stack = []
@@ -28,13 +28,19 @@ class Visitor(BabyDuckVisitor):
                     '+': 'int',
                     '-': 'int',
                     '*': 'int',
-                    '/': 'int'
+                    '/': 'int',
+                    '<': 'bool',
+                    '>': 'bool',
+                    '!=': 'bool',
                 },
                 'float': {
                     '+': 'float',
                     '-': 'float',
                     '*': 'float',
-                    '/': 'float'
+                    '/': 'float',
+                    '<': 'bool',
+                    '>': 'bool',
+                    '!=': 'bool',
                 }
             },
             'float': {
@@ -42,17 +48,29 @@ class Visitor(BabyDuckVisitor):
                     '+': 'float',
                     '-': 'float',
                     '*': 'float',
-                    '/': 'float'
+                    '/': 'float',
+                    '<': 'bool',
+                    '>': 'bool',
+                    '!=': 'bool',
                 },
                 'float': {
                     '+': 'float',
                     '-': 'float',
                     '*': 'float',
-                    '/': 'float'
+                    '/': 'float',
+                    '<': 'bool',
+                    '>': 'bool',
+                    '!=': 'bool',
                 }
             }
         }
         self.scope = "Global"
+
+        self.quadCounter = 0
+
+        self.global_vars = varTables['Global'].df
+        self.varTables = varTables
+
         self.insert_initial_goto()
 
 
@@ -68,9 +86,14 @@ class Visitor(BabyDuckVisitor):
             print(f"{i}: {quad}")
 
     def printStacks(self):
-        print("\nOperand Stack")
+        print("\nOperand Stack: ", len(self.operand_stack))
         print(self.operand_stack)
         print()
+
+        print("Type Stack: ", len(self.type_stack))
+        print(self.type_stack)
+        print()
+
 
     def new_temporary(self):
         # Generate a new temporary variable
@@ -94,34 +117,31 @@ class Visitor(BabyDuckVisitor):
             if operator in self.Semantics[left_type][right_type]:
                 return self.Semantics[left_type][right_type][operator]
         raise TypeError(f"Incompatible types: {left_type} {operator} {right_type}")
+    
 
-    def process_operator(self):
-        """
-        Process the operator at the top of the operator stack by generating a quadruple.
-        """
-        right_operand = self.operand_stack.pop()
-        right_type = self.type_stack.pop()
-        left_operand = self.operand_stack.pop()
-        left_type = self.type_stack.pop()
-        operator = self.operator_stack.pop()
-
-        # Check types using the semantic cube
-        result_type = self.check_semantic_cube(left_type, right_type, operator)
-
-        temp_var = self.new_temporary()
-        self.generate_quadruple(operator, left_operand, right_operand, temp_var)
-        self.operand_stack.append(temp_var)
-        self.type_stack.append(result_type)  # Push the result type onto the type stack
-
-    def generate_quadruple(self, operator, left_operand, right_operand, result):
+    def generate_quadruple(self, operator, left_operand, right_operand, result,typeResult=None):
         # Create a quadruple list and add it to the list of quadruples
-        quadruple = [operator, left_operand, right_operand, result, self.scope]
+
+        #implement the datatype for result
+        quadruple = [operator, left_operand, right_operand, result, self.scope, typeResult]
         self.quadruples.append(quadruple)
 
         # After adding the quadruple to the list, we need to handle the jump stack
         # for control flow operations like if-else and loops.
         if operator in ['JMPF', 'JMP', 'JMPT']:
             self.jump_stack.append(len(self.quadruples) - 1)
+
+
+    def process_operator(self):
+        right_operand = self.operand_stack.pop()
+        left_operand = self.operand_stack.pop()
+        operator = self.operator_stack.pop()
+
+
+        self.generate_quadruple(operator, left_operand, right_operand, temp_var, result_type)
+
+
+
     
     def new_label_or_placeholder(self, type):
         prefix = "L" if type == "LABEL" else "P" #labels and placeholders are continuous, meaning they share the counter
@@ -142,6 +162,16 @@ class Visitor(BabyDuckVisitor):
             if quad[3] == placeholder:
                 self.quadruples[i][3] = LABEL
 
+    def lookup_type_from_variable(self, variable_name):
+        # Implement the logic to find the type from a variable name
+        # Check in global variables
+        if variable_name in self.global_vars['id-name'].values:
+            return self.global_vars.loc[self.global_vars['id-name'] == variable_name]['type'].values[0]
+        #check in other variable tables
+        for scope, var_table in self.varTables.items():
+            if variable_name in var_table.df['id-name'].values:
+                return var_table.df.loc[var_table.df['id-name'] == variable_name]['type'].values[0]
+
     #--------------------------------------------------------------
     #MiSCELANEOUS METHODS
     #--------------------------------------------------------------
@@ -155,15 +185,23 @@ class Visitor(BabyDuckVisitor):
     
     def visitCte(self, ctx: BabyDuckParser.CteContext):
         # Return the text of the constant
-        return ctx.getText()
+        cte_text = ctx.getText()
+
+
+        return cte_text
     
     def process_operator(self):
         right_operand = self.operand_stack.pop()
         left_operand = self.operand_stack.pop()
         operator = self.operator_stack.pop()
         temp_var = self.new_temporary()
-        self.generate_quadruple(operator, left_operand, right_operand, temp_var)
+
+        
         self.operand_stack.append(temp_var)
+        
+
+        self.generate_quadruple(operator, left_operand, right_operand, temp_var, result_type)
+
 
     def visitExpression(self, ctx: BabyDuckParser.ExpressionContext):
         
@@ -180,10 +218,13 @@ class Visitor(BabyDuckVisitor):
 
             temp_var = self.new_temporary()
 
-            self.generate_quadruple(operator, left, right, temp_var)
-
             #append to operand stack
             self.operand_stack.append(temp_var)
+            
+
+
+            self.generate_quadruple(operator, left, right, temp_var)
+
 
             return temp_var
         
@@ -214,6 +255,7 @@ class Visitor(BabyDuckVisitor):
         #set scope
         self.scope = ctx.ID()[0].getText()
         self.visit(ctx.body())
+
     #--------------------------------------------------------------
     #ARITHMETIC METHODS
     #--------------------------------------------------------------
@@ -230,11 +272,14 @@ class Visitor(BabyDuckVisitor):
             if right is not None:
                 # Create new temporary
                 temp_var = self.new_temporary()
+
+                # Result is new temporary
+                left = temp_var
+
                 # Generate quadruple
                 self.generate_quadruple(operator, left, right, temp_var)
                 
-                # Result is new temporary
-                left = temp_var
+
 
         # Return the last operand, which is the result of the expression.
         return left
@@ -245,10 +290,13 @@ class Visitor(BabyDuckVisitor):
         for i in range(1, len(ctx.factor())):
             operator = ctx.getChild(2 * i - 1).getText()
             right = self.visit(ctx.factor(i))
+    
 
             if right is not None:
                 #create new temporary
                 temp_var = self.new_temporary()
+
+
                 #generate quadruple
                 self.generate_quadruple(operator, result, right, temp_var)
                 
@@ -279,10 +327,13 @@ class Visitor(BabyDuckVisitor):
 
         #generate quadruple
         temp_var = self.new_temporary()
-        self.generate_quadruple(operator, operand, None, temp_var)
-
+        
         #append to operand stack
         self.operand_stack.append(temp_var)
+
+        
+
+        self.generate_quadruple(operator, operand, None, temp_var)
 
         return temp_var
     
@@ -302,10 +353,13 @@ class Visitor(BabyDuckVisitor):
         self.generate_quadruple('=', value, None, var_id)
 
     def visitVar(self, ctx: BabyDuckParser.VarsContext):
-        # Visit the expression to evaluate it and push the result onto the operand stack
-        value = self.visit(ctx.expression())
         # The ID to which the value is assigned
         var_id = ctx.ID().getText()
+
+
+
+        # Visit the expression to evaluate it and push the result onto the operand stack
+        value = self.visit(ctx.expression())
         # Generate a quadruple for the assignment
         self.generate_quadruple('=', value, None, var_id)
 
