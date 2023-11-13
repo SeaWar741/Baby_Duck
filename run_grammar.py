@@ -7,17 +7,7 @@ from listener import Listener
 from semanticTable import Directions
 from vm import VirtualMachine
 
-def dataframe_to_dict(df):
-    # Initialize an empty dictionary
-    global_vars = {}
-    
-    # Iterate over the DataFrame rows
-    for index, row in df.iterrows():
-        # Use 'id-name' as the key and create a nested dictionary with 'value'
-        # If 'value' is None, it can be set to a default value or kept as None
-        global_vars[row['id-name']] = {'value': row['value'] or 0}  # Replace 0 with the desired default value
-    
-    return global_vars
+
 
 
 def main(argv):
@@ -75,11 +65,10 @@ def main(argv):
     print("END OF VISITING")
     print("---------------------------------------------------------------------\n")
 
-    # Create a Virtual Machine instance
-    virtual_machine = VirtualMachine(visitor.quadruples, var_tables, functions_directory)
+    # Create an instance of virtual machine
+    vm = VirtualMachine(visitor.quadruples, var_tables, functions_directory)
+    vm.run()
 
-    # Execute the quadruples
-    virtual_machine.run()
 
 
 if __name__ == '__main__':

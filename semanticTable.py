@@ -80,6 +80,7 @@ class Directions:
             }
         return ranges[var_type]
     
+
 class DirFunc:
     def __init__(self):
         self.df = pd.DataFrame(columns=["id-name", "scope","var-table","starting_quad","ending_quad"])
@@ -120,5 +121,14 @@ class VarTable:
 
     def delete(self):
         self.df = pd.DataFrame(columns=["id-name", "type", "value", "scope", "direction"])
+
+    def get_memory_direction(self,target):
+        #returns the memory direction of the target
+        #searches the element in the varTable and returns only the direction
+        try:
+            return self.df.loc[self.df["id-name"] == target]["direction"].values[0]
+           
+        except:
+            return target
 
 

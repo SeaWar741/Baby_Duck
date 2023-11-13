@@ -1,11 +1,10 @@
 program CompilerV1;
 
-var foo,t0: int; bar, foobar, barfoo: float;
+var foo: int; bar, foobar, barfoo: float;
 main 
 { 
     bar = 1 + 2;
     foo = (1+2)/3;
-    t0 = 1+2*3;
 
 
     print(1+2);

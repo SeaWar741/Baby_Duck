@@ -3,7 +3,8 @@ class VirtualMachine:
     def __init__(self, quadruples, varTables, functions):
         self.quadruples = quadruples
         self.memory_quadruples = [] #list of quadruples with memory directions TRANSLATED
-        self.varTables = varTables.items()
+        self.varTables = varTables
+        self.global_vars = varTables['Global']
         self.functions = functions
         self.operand_stack = []
         self.directions = Directions()
@@ -37,9 +38,11 @@ class VirtualMachine:
                 }
             }
         }
+        self.instruction_pointer = 0
+        self.call_stack = []
+    
 
 
-
-    def run(self):
-        #print translated quadruples
-        print("aqui va traducido")
+    def run():
+        #TODO: run the program
+        pass
