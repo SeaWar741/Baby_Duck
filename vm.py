@@ -1,4 +1,8 @@
 from semanticTable import Directions
+
+import re
+
+
 class VirtualMachine:
     def __init__(self, quadruples, varTables, functions,var_types,operand_stack):
         self.quadruples = quadruples
@@ -39,7 +43,6 @@ class VirtualMachine:
             }
         }
         self.instruction_pointer = 0
-        self.call_stack = []
 
         self.var_types = var_types
 
@@ -97,6 +100,16 @@ class VirtualMachine:
                 if element in var_table.df['id-name'].values:
                     return var_table.df.loc[var_table.df['id-name'] == element]['direction'].values[0]
 
+    def detranslate_variable(self, direction):
+        # Implement the logic to find the variable name of a memory address
+        # Check in global variables
+        if direction in self.global_vars['direction'].values:
+            return self.global_vars.loc[self.global_vars['direction'] == direction]['id-name'].values[0]
+        else:
+            #check in other variable tables
+            for scope, var_table in self.varTables.items():
+                if direction in var_table.df['direction'].values:
+                    return var_table.df.loc[var_table.df['direction'] == direction]['id-name'].values[0]
     
     def assignAddressTemporals(self, temporal, temporal_type, scope):
         # Check if the temporal has already been assigned a memory address
@@ -136,10 +149,10 @@ class VirtualMachine:
         return memory_address
 
     def getConstantType(self,constant):
-        #checks if its numeric
-        if constant.isnumeric():
-            #checks if its an integer
-            if constant.isdigit():
+        #checks if its numeric using regex
+        if re.match(r'^-?\d+(?:\.\d+)?$', constant):
+            #checks if its an int
+            if constant.isnumeric():
                 return "int"
             #checks if its a float
             else:
@@ -152,6 +165,8 @@ class VirtualMachine:
             return "bool"
         elif constant.startswith('P') or constant.startswith('L'):
             return "placeholder"
+        else:
+            print("ERROR: Invalid constant type "+constant)
 
 
     #TENTATIVE
@@ -182,7 +197,14 @@ class VirtualMachine:
         # Return the memory address
         return memory_address
 
+    def translate_constant(self,element):
+        dtype = self.getConstantType(element)
 
+        address = self.assignAddressConstants(element)
+
+        self.setValue(address,element)
+
+        return address
 
     def translate_quadruples(self):
         for quad in self.quadruples:
@@ -228,10 +250,10 @@ class VirtualMachine:
                                 # Constants might not need translation
                                 #print("Constant: ",element)
 
-                                #address = self.assignAddressConstants(element)
+                                address = self.translate_constant(element)
 
-                                translated_quad.append(element)
-                                self.operand_stack.append(element)
+                                translated_quad.append(address)
+                                self.operand_stack.append(address)
 
                         count += 1
                 else:
@@ -257,105 +279,42 @@ class VirtualMachine:
         print("Operand Stack")
         print(self.operand_stack)
 
-
-    def get_value(self, memory_address):
-        
-        
-
-        # Check if the memory address is in the temporals_values dictionary
-        if memory_address in self.temporals_values.keys():
-            # Return the value of the temporal
-            return self.temporals_values[memory_address]
+    def not_memory_address(self,element):
+        #checks if element is a memory address
+        if element in self.temporals_values.keys():
+            return False
         else:
-            # check for value in varTables
-            for scope, var_table in self.varTables.items():
-                if memory_address in var_table.df['direction'].values:
-                    return var_table.df.loc[var_table.df['direction'] == memory_address]['value'].values[0]
-            #if not found in varTables then return error
-            raise ValueError(f"Error: Memory address {memory_address} not found")
+            return True
         
-    def perform_arithmetic(self, operation, operand1, operand2):
 
-        if operation == '+':
-            return int(operand1) + int(operand2)
-        elif operation == '-':
-            return int(operand1) - int(operand2)
-        elif operation == '*':
-            return int(operand1) * int(operand2)
-        elif operation == '/':
-            return int(operand1) / int(operand2)
-        elif operation == '>':
-            return int(operand1) > int(operand2)
-        elif operation == '<':
-            return int(operand1) < int(operand2)
-        elif operation == '>=':
-            return int(operand1) >= int(operand2)
-        elif operation == '<=':
-            return int(operand1) <= int(operand2)
-        elif operation == "!=":
-            return int(operand1) != int(operand2)
+    def setValue(self, memory_address, value):
+        #set the value to the variable in the varTable
+        #check if the memory address is in the global varTable
+        if memory_address in self.global_vars['direction'].values:
+            self.global_vars.loc[self.global_vars['direction'] == memory_address, 'value'] = value
         else:
-            raise ValueError(f"Error: Invalid operation {operation}")
-    
-    def set_value(self, memory_address, value):
-        # Check if the memory address is in the temporals_values dictionary
-        if memory_address in self.temporals_values.keys():
-            # Set the value of the temporal
-            self.temporals_values[memory_address] = value
-        else:
-            # check for value in varTables
+            #check in other variable tables
             for scope, var_table in self.varTables.items():
                 if memory_address in var_table.df['direction'].values:
                     var_table.df.loc[var_table.df['direction'] == memory_address, 'value'] = value
-                    return
-            #if not found in varTables then return error
-            raise ValueError(f"Error: Memory address {memory_address} not found")
+
+
+
+    
+        
+
+
+    def execute_quadruple(self,quad):
+        op, left_operand, right_operand, result = quad
+
+        #TODO
+
+
+
 
     def execute_quadruples(self):
-        while self.instruction_pointer < len(self.memory_quadruples):
-            quad = self.memory_quadruples[self.instruction_pointer]
-            operation = quad[0]
-
-
-            """ 
-            if operation == 'GOTO':
-                #TODO: check if the label exists
-                pass
-
-            elif operation == '=':
-                # Assignment operation
-                value = self.get_value(quad[1])
-                self.set_value(quad[3], value)
-
-            elif operation in ['+', '-', '*', '/']:
-                # Arithmetic operations
-                operand1 = self.get_value(quad[1])
-                operand2 = self.get_value(quad[2])
-                result = self.perform_arithmetic(operation, operand1, operand2)
-                self.set_value(quad[3], result)
-
-            elif operation == '=':
-                # Assignment operation
-                value = self.get_value(quad[1])
-                self.set_value(quad[3], value)
-
-            elif operation == 'PRINT':
-                # Print operation
-                #if the value is a memory address then get the value from the memory address else just print the value
-                if quad[3] in self.temporals_values.keys():
-                    value = self.temporals_values[quad[3]]
-                else:
-                    value = quad[3]
-                print(value)
-
-            elif operation == 'END':
-                break """
-
-            self.instruction_pointer += 1
-
-                
-
-
+        for quad in self.memory_quadruples:
+            self.execute_quadruple(quad)
 
     def run(self):
         # Translate quadruples
@@ -363,3 +322,9 @@ class VirtualMachine:
         self.printTranslatedQuadruples()
         # Execute quadruples
         self.execute_quadruples()
+
+
+        #print varTables
+        for scope, var_table in self.varTables.items():
+            print(f"\n{scope} varTable:")
+            print(var_table.df)

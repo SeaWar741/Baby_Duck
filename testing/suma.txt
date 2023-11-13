@@ -1,0 +1,11 @@
+program CompilerV1;
+
+var foo: int;
+
+main 
+{ 
+    foo = 2+1;
+
+}
+
+end     
