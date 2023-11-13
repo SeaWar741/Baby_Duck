@@ -67,7 +67,13 @@ class VirtualMachine:
         self.placeholders = (18432, 19455)
 
 
-        self.temporals_values = {} #dictionary of temporals values key = memory address, value = value
+        self.temporals_values = {} #dictionary of temporals values key = memory address, value = (value,name)
+        self.constants_values = {} #dictionary of constants values key = memory address, value = (value,name)
+        self.placeholders_values = {}
+
+        self.temporals_data = {} #dictionary of temporals data key = memory address,value
+        self.constants_data = {} #dictionary of constants data key = memory address,value
+        self.placeholders_data = {} #dictionary of placeholders data key = memory address,value
 
 
     def is_operator(self, element):
@@ -111,9 +117,14 @@ class VirtualMachine:
                 if direction in var_table.df['direction'].values:
                     return var_table.df.loc[var_table.df['direction'] == direction]['id-name'].values[0]
     
+    def print_temporals(self):
+        print("\nTemporals:")
+        for key, value in self.temporals_values.items():
+            print(key, value)
+
     def assignAddressTemporals(self, temporal, temporal_type, scope):
         # Check if the temporal has already been assigned a memory address
-        if temporal in self.temporals_values.values():
+        if temporal in self.temporals_values:
             # Return the existing memory address
             return self.temporals_values[temporal]
 
@@ -125,6 +136,7 @@ class VirtualMachine:
             else:
                 memory_address = self.temporal_ints_local[0]
                 self.temporal_ints_local = (self.temporal_ints_local[0] + 1, self.temporal_ints_local[1])
+            # ... (similar for 'float' and 'bool')
         elif temporal_type == 'float':
             if scope == 'Global':
                 memory_address = self.temporal_floats_global[0]
@@ -141,12 +153,18 @@ class VirtualMachine:
                 self.temporal_bools_local = (self.temporal_bools_local[0] + 1, self.temporal_bools_local[1])
         else:
             raise ValueError("Invalid temporal type")
-
+        
         # Add the temporal to the temporals_values dictionary
-        self.temporals_values[memory_address] = temporal
+        self.temporals_values[temporal] = memory_address
+
+        #add the temporal to the temporals_data dictionary
+        self.temporals_data[memory_address] = None
 
         # Return the memory address
         return memory_address
+        
+            
+            
 
     def getConstantType(self,constant):
         #checks if its numeric using regex
@@ -236,6 +254,7 @@ class VirtualMachine:
                                 #check if the element is already in temporals_values as value. not as key
                                 if element in self.temporals_values.values():
                                     #if it is, then just append the memory address
+                                    
                                     translated_quad.append(element)
                                     self.operand_stack.append(element)
                                 else:
@@ -247,7 +266,6 @@ class VirtualMachine:
                                     self.operand_stack.append(address)
                             else:
                                 # Constants might not need translation
-                                #print("Constant: ",element)
 
                                 address = self.translate_constant(element)
 
@@ -287,9 +305,21 @@ class VirtualMachine:
         
 
     def setValue(self, memory_address, value):
+        #if its on the temporals_values then set the value in temporals_data
+        if memory_address in self.temporals_values.keys():
+            self.temporals_data[memory_address] = value
+
+        #if its on the constants_values then set the value in constants_data
+        elif memory_address in self.constants_values.keys():
+            self.constants_data[memory_address] = value
+        
+        #if its on the placeholders_values then set the value in placeholders_data
+        elif memory_address in self.placeholders_values.keys():
+            self.placeholders_data[memory_address] = value
+
         #set the value to the variable in the varTable
         #check if the memory address is in the global varTable
-        if memory_address in self.global_vars['direction'].values:
+        elif memory_address in self.global_vars['direction'].values:
             self.global_vars.loc[self.global_vars['direction'] == memory_address, 'value'] = value
         else:
             #check in other variable tables
@@ -297,10 +327,22 @@ class VirtualMachine:
                 if memory_address in var_table.df['direction'].values:
                     var_table.df.loc[var_table.df['direction'] == memory_address, 'value'] = value
 
+        
+
     def getValue(self, memory_address):
+        #check if the memory address is in the temporals_values
+        if memory_address in self.temporals_values.keys():
+            return self.temporals_data[memory_address]
+        #check if the memory address is in the constants
+        elif memory_address in self.constants_values.keys():
+            return self.constants_data[memory_address]
+        #check if the memory address is in the placeholders
+        elif memory_address in self.placeholders_values.keys():
+            return self.placeholders_data[memory_address]
+
         #get the value of the variable on the memory address. check the varTables,temporals_values,constants
         #check if the memory address is in the global varTable
-        if memory_address in self.global_vars['direction'].values:
+        elif memory_address in self.global_vars['direction'].values:
             return self.global_vars.loc[self.global_vars['direction'] == memory_address, 'value'].values[0]
         else:
             #check in other variable tables
