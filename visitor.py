@@ -6,7 +6,7 @@ from utils.BabyDuckVisitor import BabyDuckVisitor
 
 
 class Visitor(BabyDuckVisitor):
-    def __init__(self):
+    def __init__(self,var_tables):
         self.temp_counter = 0
         self.quadruples = []
         self.operand_stack = []
@@ -66,6 +66,9 @@ class Visitor(BabyDuckVisitor):
             }
         }
         self.scope = "Global"
+
+        self.var_tables = var_tables
+
         self.insert_initial_goto()
 
 
@@ -118,9 +121,9 @@ class Visitor(BabyDuckVisitor):
         self.operand_stack.append(temp_var)
         self.generate_quadruple(operator, left_operand, right_operand, temp_var)
 
-    def generate_quadruple(self, operator, left_operand, right_operand, result):
+    def generate_quadruple(self, operator, left_operand, right_operand, result,targetType=None):
         # Create a quadruple list and add it to the list of quadruples
-        quadruple = [operator, left_operand, right_operand, result, self.scope]
+        quadruple = [operator, left_operand, right_operand, result, self.scope, targetType]
         self.quadruples.append(quadruple)
 
         # After adding the quadruple to the list, we need to handle the jump stack
