@@ -109,22 +109,14 @@ class Visitor(BabyDuckVisitor):
         raise TypeError(f"Incompatible types: {left_type} {operator} {right_type}")
 
     def process_operator(self):
-        """
-        Process the operator at the top of the operator stack by generating a quadruple.
-        """
         right_operand = self.operand_stack.pop()
-        right_type = self.type_stack.pop()
         left_operand = self.operand_stack.pop()
-        left_type = self.type_stack.pop()
         operator = self.operator_stack.pop()
 
-        # Check types using the semantic cube
-        result_type = self.check_semantic_cube(left_type, right_type, operator)
 
         temp_var = self.new_temporary()
-        self.generate_quadruple(operator, left_operand, right_operand, temp_var)
         self.operand_stack.append(temp_var)
-        self.type_stack.append(result_type)  # Push the result type onto the type stack
+        self.generate_quadruple(operator, left_operand, right_operand, temp_var)
 
     def generate_quadruple(self, operator, left_operand, right_operand, result):
         # Create a quadruple list and add it to the list of quadruples
@@ -175,8 +167,10 @@ class Visitor(BabyDuckVisitor):
         left_operand = self.operand_stack.pop()
         operator = self.operator_stack.pop()
         temp_var = self.new_temporary()
-        self.generate_quadruple(operator, left_operand, right_operand, temp_var)
         self.operand_stack.append(temp_var)
+
+        self.generate_quadruple(operator, left_operand, right_operand, temp_var)
+
 
     def visitExpression(self, ctx: BabyDuckParser.ExpressionContext):
         
@@ -193,10 +187,12 @@ class Visitor(BabyDuckVisitor):
 
             temp_var = self.new_temporary()
 
-            self.generate_quadruple(operator, left, right, temp_var)
-
             #append to operand stack
             self.operand_stack.append(temp_var)
+
+            self.generate_quadruple(operator, left, right, temp_var)
+
+
 
             return temp_var
         
@@ -292,10 +288,13 @@ class Visitor(BabyDuckVisitor):
 
         #generate quadruple
         temp_var = self.new_temporary()
-        self.generate_quadruple(operator, operand, None, temp_var)
 
         #append to operand stack
         self.operand_stack.append(temp_var)
+
+        self.generate_quadruple(operator, operand, None, temp_var)
+
+
 
         return temp_var
     
