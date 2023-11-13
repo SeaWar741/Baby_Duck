@@ -27,6 +27,8 @@ class Directions:
         self.functions = (5120, 6143)
         self.local_ints = (6144, 7167)
         self.local_floats = (7168, 8191)
+        self.temporal_ints = (8192, 9215)
+        self.temporal_floats = (9216, 10240)
         # Add more ranges for local strings and bools if needed
     
     def in_range(self, var_type, direction, scope):

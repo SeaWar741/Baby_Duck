@@ -52,7 +52,12 @@ class Visitor(BabyDuckVisitor):
                 }
             }
         }
+        self.scope = "Global"
         self.insert_initial_goto()
+
+
+
+
     #--------------------------------------------------------------
     #UTILITY METHODS
     #--------------------------------------------------------------
@@ -69,7 +74,7 @@ class Visitor(BabyDuckVisitor):
 
     def new_temporary(self):
         # Generate a new temporary variable
-        temp_var = f"t{self.temp_counter}"
+        temp_var = f"_t{self.temp_counter}" #to avoid issues if user decides to use t# as a variable name
         self.temp_counter += 1
         return temp_var
     
@@ -110,7 +115,7 @@ class Visitor(BabyDuckVisitor):
 
     def generate_quadruple(self, operator, left_operand, right_operand, result):
         # Create a quadruple list and add it to the list of quadruples
-        quadruple = [operator, left_operand, right_operand, result]
+        quadruple = [operator, left_operand, right_operand, result, self.scope]
         self.quadruples.append(quadruple)
 
         # After adding the quadruple to the list, we need to handle the jump stack
@@ -119,7 +124,7 @@ class Visitor(BabyDuckVisitor):
             self.jump_stack.append(len(self.quadruples) - 1)
     
     def new_label_or_placeholder(self, type):
-        prefix = "L" if type == "LABEL" else "P"
+        prefix = "L" if type == "LABEL" else "P" #labels and placeholders are continuous, meaning they share the counter
         value = f"{prefix}{self.label_counter}"
         self.label_counter += 1
         return value
@@ -187,15 +192,28 @@ class Visitor(BabyDuckVisitor):
             raise ValueError(f"Unexpected expression format: {ctx.getText()}")
     
     def visitMainSection(self, ctx: BabyDuckParser.MainSectionContext):
-        print("Main Section")
+        #print("Main Section")
+        #change scope
+        self.scope = "Global"
         #HERE PERFORM THE BACKPATCHING of the GOTO initial
-        main_label = self.new_label_or_placeholder("LABEL")
-        self.backpatch2('P0', main_label)
+        
+        #if there are no other functions, then the placeholder is the first quadruple  
+        if self.label_counter == 1: #when the counter was only used for the GOTO main THEN the placeholder is the first quadruple
+            #self.backpatch2('P0', main_label)
+            self.visit(ctx.body())
+            # Generate a quadruple for the end of the program
+            self.generate_quadruple("END", None, None, None)
+        else:
+            main_label = self.new_label_or_placeholder("LABEL")
+            self.backpatch2('P0', main_label)
+            self.visit(ctx.body())
+            # Generate a quadruple for the end of the program
+            self.generate_quadruple("END", None, None, None)
+
+    def visitFuncs(self, ctx: BabyDuckParser.FuncsContext):
+        #set scope
+        self.scope = ctx.ID()[0].getText()
         self.visit(ctx.body())
-        # Generate a quadruple for the end of the program
-        self.generate_quadruple("END", None, None, None)
-
-
     #--------------------------------------------------------------
     #ARITHMETIC METHODS
     #--------------------------------------------------------------
@@ -298,6 +316,7 @@ class Visitor(BabyDuckVisitor):
 
     def visitF_call(self, ctx: BabyDuckParser.F_callContext): 
         function_name = ctx.ID().getText()
+        scope = function_name
         arg_count = 0
         args = ctx.expression()  # Get the list of expressions passed as arguments
 

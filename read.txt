@@ -1,4 +1,4 @@
-0: ['GOTO', None, None, 'P0']
+0: ('GOTO', None, None, 'L8')
 1: ['*', '1', '1', 't0']
 2: ['+', '1', '1', 't1']
 3: ['/', 't0', 't1', 't2']
@@ -26,3 +26,4 @@
 25: ['PARAM', '2', None, None]
 26: ['PARAM', '3', None, None]
 27: ['CALL', 'emptyFunction2', 2, None]
+28: ['END', None, None, None]

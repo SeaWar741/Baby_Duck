@@ -4,6 +4,8 @@ from utils.BabyDuckLexer import BabyDuckLexer
 from utils.BabyDuckParser import BabyDuckParser
 from visitor import Visitor
 from listener import Listener
+from semanticTable import Directions
+from vm import VirtualMachine
 
 def dataframe_to_dict(df):
     # Initialize an empty dictionary
@@ -47,12 +49,14 @@ def main(argv):
     print("---------------------------------------------------------------------\n")
 
     # Print the Directory of Functions
+    functions_directory = listener.dir_func.df
     print("Directory of Functions:")
-    print(listener.dir_func.df)
+    print(functions_directory)
 
     # Print the Variable Tables for each scope
+    var_tables = listener.var_tables
     print("\nVariable Tables by Scope:")
-    for scope, var_table in listener.var_tables.items():
+    for scope, var_table in var_tables.items():
         print(f"\nScope: {scope}")
         print(var_table.df)
 
@@ -70,6 +74,12 @@ def main(argv):
     print("\n---------------------------------------------------------------------")
     print("END OF VISITING")
     print("---------------------------------------------------------------------\n")
+
+    # Create a Virtual Machine instance
+    virtual_machine = VirtualMachine(visitor.quadruples, var_tables, functions_directory)
+
+    # Execute the quadruples
+    virtual_machine.run()
 
 
 if __name__ == '__main__':
