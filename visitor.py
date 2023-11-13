@@ -6,7 +6,7 @@ from utils.BabyDuckVisitor import BabyDuckVisitor
 
 
 class Visitor(BabyDuckVisitor):
-    def __init__(self,varTables):
+    def __init__(self,varTables,functions_directory):
         self.temp_counter = 0
         self.quadruples = []
         self.operand_stack = []
@@ -70,6 +70,7 @@ class Visitor(BabyDuckVisitor):
 
         self.global_vars = varTables['Global'].df
         self.varTables = varTables
+        self.functions_directory = functions_directory
 
         self.insert_initial_goto()
 
@@ -94,6 +95,9 @@ class Visitor(BabyDuckVisitor):
         print(self.type_stack)
         print()
 
+        print("Functions Directory: ")
+        print(self.functions_directory)
+        print()
 
     def new_temporary(self):
         # Generate a new temporary variable
@@ -130,6 +134,8 @@ class Visitor(BabyDuckVisitor):
         # for control flow operations like if-else and loops.
         if operator in ['JMPF', 'JMP', 'JMPT']:
             self.jump_stack.append(len(self.quadruples) - 1)
+        
+        self.quadCounter += 1
 
 
     def process_operator(self):
@@ -254,7 +260,11 @@ class Visitor(BabyDuckVisitor):
     def visitFuncs(self, ctx: BabyDuckParser.FuncsContext):
         #set scope
         self.scope = ctx.ID()[0].getText()
+        self.functions_directory.loc[self.functions_directory['id-name'] == self.scope, 'starting_quad'] = self.quadCounter
         self.visit(ctx.body())
+
+        #set the quadCounter as the first quadruple of the functiondirectory
+        self.functions_directory.loc[self.functions_directory['id-name'] == self.scope, 'ending_quad'] = self.quadCounter
 
     #--------------------------------------------------------------
     #ARITHMETIC METHODS
