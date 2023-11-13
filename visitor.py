@@ -11,7 +11,7 @@ class Visitor(BabyDuckVisitor):
         self.quadruples = []
         self.operand_stack = []
         self.operator_stack = []
-        self.type_stack = []
+        self.type_dict = {}
         self.jump_stack = []
         self.temp_counter = 0
         self.label_counter = 0
@@ -89,7 +89,7 @@ class Visitor(BabyDuckVisitor):
         print(self.operand_stack)
         print()
         print("Type Stack")
-        print(self.type_stack)
+        print(self.type_dict)
 
     def new_temporary(self):
         # Generate a new temporary variable
@@ -122,9 +122,14 @@ class Visitor(BabyDuckVisitor):
 
         temp_var = self.new_temporary()
         self.operand_stack.append(temp_var)
+
         self.generate_quadruple(operator, left_operand, right_operand, temp_var)
 
     def generate_quadruple(self, operator, left_operand, right_operand, result,targetType=None):
+
+        print(f"({operator},{left_operand},{right_operand},{result},{self.scope},{targetType})")
+        print(self.operand_stack)
+        print(self.type_dict)
         # Create a quadruple list and add it to the list of quadruples
         quadruple = [operator, left_operand, right_operand, result, self.scope, targetType]
         self.quadruples.append(quadruple)
@@ -163,6 +168,21 @@ class Visitor(BabyDuckVisitor):
             if variable_name in var_table.df['id-name'].values:
                 return var_table.df.loc[var_table.df['id-name'] == variable_name]['type'].values[0]
 
+
+    def get_type(self, operand):
+        if self.is_number(operand):
+            return "int" if operand.isdigit() else "float"
+        elif operand in self.type_dict:
+            return self.type_dict[operand]
+        else:
+            #check if bool
+            if operand == "true" or operand == "false":
+                return "bool"
+            else:
+                return None
+
+
+
     #--------------------------------------------------------------
     #MiSCELANEOUS METHODS
     #--------------------------------------------------------------
@@ -185,7 +205,19 @@ class Visitor(BabyDuckVisitor):
         temp_var = self.new_temporary()
         self.operand_stack.append(temp_var)
 
-        self.generate_quadruple(operator, left_operand, right_operand, temp_var)
+        #get type of operands
+        left_type = self.get_type(left_operand)
+        right_type = self.get_type(right_operand)
+        
+        
+
+        #check if types are compatible with operator
+        result_type = self.check_semantic_cube(left_type,right_type,operator)
+        #append to type dict
+        self.type_dict[temp_var] = result_type
+        #generate quadruple
+        self.generate_quadruple(operator, left_operand, right_operand, temp_var,result_type)
+
 
 
     def visitExpression(self, ctx: BabyDuckParser.ExpressionContext):
@@ -206,9 +238,21 @@ class Visitor(BabyDuckVisitor):
             #append to operand stack
             self.operand_stack.append(temp_var)
 
-            self.generate_quadruple(operator, left, right, temp_var)
+            #get type of operands
+            left_type = self.get_type(left)
+            right_type = self.get_type(right)
 
+            
+            
 
+            #check if types are compatible with operator
+            result_type = self.check_semantic_cube(left_type,right_type,operator)
+            #append to type dict
+            self.type_dict[temp_var] = result_type
+            #generate quadruple
+            self.generate_quadruple(operator, left, right, temp_var,result_type)
+
+            
 
             return temp_var
         
@@ -251,12 +295,27 @@ class Visitor(BabyDuckVisitor):
         for i in range(1, terminos_length):
             operator = ctx.getChild(2 * i - 1).getText()  # Gets the operator
             right = self.visit(terminos[i])
-            
+
             if right is not None:
                 # Create new temporary
                 temp_var = self.new_temporary()
+
+
+                #get type of operands
+                left_type = self.get_type(left)
+                right_type = self.get_type(right)
+
+                #check if types are compatible with operator
+                result_type = self.check_semantic_cube(left_type,right_type,operator)
+
+                #append to operand stack
+                self.operand_stack.append(temp_var)
+
+                #append to type dict
+                self.type_dict[temp_var] = result_type
+
                 # Generate quadruple
-                self.generate_quadruple(operator, left, right, temp_var)
+                self.generate_quadruple(operator, left, right, temp_var,result_type)
                 
                 # Result is new temporary
                 left = temp_var
@@ -274,8 +333,18 @@ class Visitor(BabyDuckVisitor):
             if right is not None:
                 #create new temporary
                 temp_var = self.new_temporary()
+
+                #get type of right
+                right_type = self.get_type(right)
+
+                #append to the type dict
+                self.type_dict[temp_var] = right_type
+
+                #append to operand stack
+                self.operand_stack.append(temp_var)
+
                 #generate quadruple
-                self.generate_quadruple(operator, result, right, temp_var)
+                self.generate_quadruple(operator, result, right, temp_var,right_type)
                 
                 #result is new temporary
                 result = temp_var   
@@ -305,12 +374,8 @@ class Visitor(BabyDuckVisitor):
         #generate quadruple
         temp_var = self.new_temporary()
 
-        #append to operand stack
-        self.operand_stack.append(temp_var)
 
-        self.generate_quadruple(operator, operand, None, temp_var)
-
-
+        self.generate_quadruple(operator, operand, None, temp_var,)
 
         return temp_var
     
@@ -333,8 +398,8 @@ class Visitor(BabyDuckVisitor):
         #append to operand stack
         self.operand_stack.append(var_id)
 
-        #append to type stack
-        self.type_stack.append(var_type)
+        #append to type dict
+        self.type_dict[var_id] = var_type
     
         # Generate a quadruple for the assignment
         self.generate_quadruple('=', value, None, var_id,var_type)
