@@ -20,5 +20,12 @@ antlr4 -Dlanguage=Python3 -visitor -o utils BabyDuck.g4
 
 ### **Run code:**
 ```bash
-python run_grammar.py ./testing/test.babyduck
+python baby_duck.py ./testing/test.babyduck 
 ```
+
+To execute it in **debugging mode**:
+```bash
+python baby_duck.py ./testing/test.babyduck --debug
+```
+
+This will display the quadruples in plain operations, memory operations, operand stacks, temporal values, and directions, as well as function tables, variable tables, among other miscellaneous debugging functionalities.

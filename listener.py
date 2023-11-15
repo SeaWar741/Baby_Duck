@@ -12,12 +12,26 @@ import pandas as pd
 
 
 class Listener(BabyDuckListener):
-    def __init__(self):
+    """
+    Listener class that inherits from the generated BabyDuckListener class.
+    This class defines methods that are called when the listener enters or exits a specific rule in the parse tree.
+    It also contains methods for checking variable declarations and function calls.
+    """
+    def __init__(self, debug=False):
+        """
+        Constructor for the Listener class.
+        Initializes the variable tables and scope stack, and sets the debug flag.
+        """
         self.dir_func = DirFunc()
         self.var_tables = {"Global": VarTable()}  # Dictionary of variable tables, one for each scope
         self.scope_stack = ["Global"]  # Initialize with global scope
+        self.debug = debug
 
     def exitVars(self, ctx: BabyDuckParser.VarsContext):
+        """
+        Method called when the listener exits the Vars rule in the parse tree.
+        Extracts variable declarations and adds them to the current scope's variable table.
+        """
         # The current scope is the top of the scope stack
         current_scope = self.scope_stack[-1]
 
@@ -36,13 +50,17 @@ class Listener(BabyDuckListener):
                         #check the last memory direction on global variable table so that they dont overlap (local variable table) 
                         #TODO!!!
 
-
-                        print(f"Added variable: {var_name} | type: {var_type} | scope: {current_scope}")
+                        if self.debug:
+                            print(f"Added variable: {var_name} | type: {var_type} | scope: {current_scope}")
                         # Add the variable to the current scope's variable table
                         self.var_tables[current_scope].add_var(var_name, var_type, scope=current_scope)
                     j -= 1
 
     def exitStatement(self, ctx: BabyDuckParser.StatementContext):
+        """
+        Method called when the listener exits the Statement rule in the parse tree.
+        Determines the type of statement and extracts relevant information.
+        """
         # Capture the entire text of the statement
         statement_text = ctx.getText()
 
@@ -56,23 +74,29 @@ class Listener(BabyDuckListener):
             # Check if the variable is declared
             if not self.is_var_declared(var_name):
                 raise ValueError(f"Error: Undeclared variable {var_name}")
-
-            print(f"Variable Name: {var_name} | Expression: {expression}")
+            
+            if self.debug:
+                print(f"Variable Name: {var_name} | Expression: {expression}")
 
         #CONDITION
         elif ctx.condition():
             statement_type = "Condition (if-else)"
             parenthesized_expression_ctx = ctx.condition().expression().getText()
-            print(f"Condition Expression: {parenthesized_expression_ctx}")
+
+            if self.debug:
+                print(f"Condition Expression: {parenthesized_expression_ctx}")
 
             # Check if the true body of the condition is present
             if ctx.condition().body():
                 # Get the statements within the true body
                 true_body_ctx = ctx.condition().body(0).statement()
                 true_body = ' '.join([statement.getText() for statement in true_body_ctx])
-                print(f"True Body: {true_body}")
+
+                if self.debug:
+                    print(f"True Body: {true_body}")
             else:
-                print("No true body found for the condition.")
+                if self.debug:
+                    print("No true body found for the condition.")
 
             # Initialize false_body as None
             false_body = None
@@ -82,17 +106,23 @@ class Listener(BabyDuckListener):
                 # Get the statements within the false body
                 false_body_ctx = ctx.condition().body(1).statement()
                 false_body = ' '.join([statement.getText() for statement in false_body_ctx])
-                print(f"False Body: {false_body}")
+
+                if self.debug:
+                    print(f"False Body: {false_body}")
             else:
-                print("No false body found for the condition.")
+
+                if self.debug:
+                    print("No false body found for the condition.")
 
         #CYCLE
         elif ctx.cycle():
             statement_type = "Cycle (while-do)"
             while_body = ctx.cycle().body().getText()  # Body of the while loop
             do_expression = ctx.cycle().expression().getText()  # Expression after the 'do' keyword
-            print(f"While Body: {while_body}")
-            print(f"Do Expression: {do_expression}")
+
+            if self.debug:
+                print(f"While Body: {while_body}")
+                print(f"Do Expression: {do_expression}")
 
 
         elif ctx.f_call():
@@ -102,13 +132,20 @@ class Listener(BabyDuckListener):
             if ctx.f_call().expression():
                 func_params = [param.getText() for param in ctx.f_call().expression()]
                 
-                print(f"Function Name: {func_name} | Parameters: {func_params}")
+                if self.debug:
+                    print(f"Function Name: {func_name} | Parameters: {func_params}")
             else:
-                print(f"Function Name: {func_name} | No Parameters")
-
-        print("")
+                if self.debug:
+                    print(f"Function Name: {func_name} | No Parameters")
+                
+        if self.debug:
+            print("")
 
     def enterFuncs(self, ctx: BabyDuckParser.FuncsContext):
+        """
+        Method called when the listener enters the Funcs rule in the parse tree.
+        Pushes the function name to the scope stack and creates a new variable table for the function scope.
+        """
         # Push the function name to the scope stack when entering a function
         func_name = ctx.ID()[0].getText()
         self.scope_stack.append(func_name)
@@ -120,16 +157,27 @@ class Listener(BabyDuckListener):
         self.dir_func.add_func(func_name, func_type, scope=func_name)
 
     def exitFuncs(self, ctx: BabyDuckParser.FuncsContext):
+        """
+        Method called when the listener exits the Funcs rule in the parse tree.
+        Pops the function name from the scope stack.
+        """
         # Pop the function name from the scope stack when exiting a function
         self.scope_stack.pop()
     
     def exitAssign(self, ctx: BabyDuckParser.AssignContext):
+        """
+        Method called when the listener exits the Assign rule in the parse tree.
+        Checks if the variable being assigned to is declared.
+        """
         # Check if the variable being assigned to is declared
         var_name = ctx.ID().getText()
         if not self.is_var_declared(var_name):
             raise ValueError(f"Error: Undeclared variable {var_name}")
 
     def is_var_declared(self, var_name):
+        """
+        Method for checking if a variable is declared in the current scope or any outer scope.
+        """
         # Check if a variable is declared in the current scope or any outer scope
         for scope in reversed(self.scope_stack):
             if var_name in self.var_tables[scope].df["id-name"].values:

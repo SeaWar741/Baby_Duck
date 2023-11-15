@@ -4,7 +4,7 @@ import re
 
 
 class VirtualMachine:
-    def __init__(self, quadruples, varTables, functions,var_types,operand_stack):
+    def __init__(self, quadruples, varTables, functions,var_types,operand_stack,debug=False):
         self.quadruples = quadruples
         self.memory_quadruples = [] #list of quadruples with memory directions TRANSLATED
         self.varTables = varTables
@@ -90,6 +90,8 @@ class VirtualMachine:
 
         self.end_cycle_positions = [] #list of positions of the end of cycles youve entered
 
+        self.debug = debug
+
     def printvariableTables(self):
         #print varTables
         for scope, var_table in self.varTables.items():
@@ -110,12 +112,33 @@ class VirtualMachine:
             return False
 
     def is_variable(self, element):
-        #check if element is a variable in any varTable
-        for scope, var_table in self.varTables.items():
-            if element in var_table.df['id-name'].values:
-                return True
+            """
+            Check if an element is a variable in any varTable.
+
+            Args:
+            element (str): The element to check.
+
+            Returns:
+            bool: True if the element is a variable in any varTable, False otherwise.
+            """
+            #check if element is a variable in any varTable
+            for scope, var_table in self.varTables.items():
+                if element in var_table.df['id-name'].values:
+                    return True
             
     def translate_variable(self, element):
+        """
+        Translates a variable name into its corresponding memory address.
+
+        Args:
+            element (str): The name of the variable to be translated.
+
+        Returns:
+            int: The memory address of the variable.
+
+        Raises:
+            KeyError: If the variable is not found in any of the variable tables.
+        """
         # Implement the logic to find the memory address of a variable
         # Check in global variables
         if element in self.global_vars['id-name'].values:
@@ -125,17 +148,28 @@ class VirtualMachine:
             for scope, var_table in self.varTables.items():
                 if element in var_table.df['id-name'].values:
                     return var_table.df.loc[var_table.df['id-name'] == element]['direction'].values[0]
+        raise KeyError(f"Variable '{element}' not found in any variable table.")
 
     def detranslate_variable(self, direction):
-        # Implement the logic to find the variable name of a memory address
-        # Check in global variables
-        if direction in self.global_vars['direction'].values:
-            return self.global_vars.loc[self.global_vars['direction'] == direction]['id-name'].values[0]
-        else:
-            #check in other variable tables
-            for scope, var_table in self.varTables.items():
-                if direction in var_table.df['direction'].values:
-                    return var_table.df.loc[var_table.df['direction'] == direction]['id-name'].values[0]
+            """
+            Given a memory address, this function returns the variable name associated with it.
+            It first checks in the global variables, and if not found, it checks in other variable tables.
+            
+            Args:
+            direction (int): The memory address of the variable
+            
+            Returns:
+            str: The name of the variable associated with the memory address
+            """
+            # Implement the logic to find the variable name of a memory address
+            # Check in global variables
+            if direction in self.global_vars['direction'].values:
+                return self.global_vars.loc[self.global_vars['direction'] == direction]['id-name'].values[0]
+            else:
+                #check in other variable tables
+                for scope, var_table in self.varTables.items():
+                    if direction in var_table.df['direction'].values:
+                        return var_table.df.loc[var_table.df['direction'] == direction]['id-name'].values[0]
     
     def print_temporals(self):
         print("\nTemporals:")
@@ -143,6 +177,20 @@ class VirtualMachine:
             print(key, value)
 
     def assignAddressTemporals(self, temporal, temporal_type, scope):
+        """
+        Assigns a memory address to a temporal variable based on its type and scope.
+
+        Args:
+            temporal (str): The name of the temporal variable.
+            temporal_type (str): The type of the temporal variable (int, float, or bool).
+            scope (str): The scope of the temporal variable (Global or Local).
+
+        Returns:
+            int: The memory address assigned to the temporal variable.
+
+        Raises:
+            ValueError: If the temporal type is invalid.
+        """
         # Check if the temporal has already been assigned a memory address
         if temporal in self.temporals_values:
             # Return the existing memory address
@@ -183,24 +231,28 @@ class VirtualMachine:
                
 
     def getConstantType(self,constant):
-        #checks if its numeric using regex
-        if re.match(r'^-?\d+(?:\.\d+)?$', constant):
-            #checks if its an int
-            if constant.isnumeric():
-                return "int"
-            #checks if its a float
+            """
+            This function receives a constant and returns its type.
+            The types can be: int, float, string, bool or placeholder.
+            """
+            #checks if its numeric using regex
+            if re.match(r'^-?\d+(?:\.\d+)?$', constant):
+                #checks if its an int
+                if constant.isnumeric():
+                    return "int"
+                #checks if its a float
+                else:
+                    return "float"
+            #checks if its a string
+            elif constant.startswith('"') and constant.endswith('"'):
+                return "string"
+            #checks if its a boolean
+            elif constant == "true" or constant == "false":
+                return "bool"
+            elif constant.startswith('P') or constant.startswith('L'):
+                return "placeholder"
             else:
-                return "float"
-        #checks if its a string
-        elif constant.startswith('"') and constant.endswith('"'):
-            return "string"
-        #checks if its a boolean
-        elif constant == "true" or constant == "false":
-            return "bool"
-        elif constant.startswith('P') or constant.startswith('L'):
-            return "placeholder"
-        else:
-            print("ERROR: Invalid constant type "+constant)
+                print("ERROR: Invalid constant type "+constant)
 
     def printstacks(self):
         print("\nOperand Stack:")
@@ -219,6 +271,15 @@ class VirtualMachine:
         print(self.placeholders_data)
 
     def assignAddressConstants(self, constant):
+        """
+        Asigna una dirección de memoria a una constante y la agrega al diccionario de valores temporales.
+
+        Args:
+            constant: La constante a la que se le asignará una dirección de memoria.
+
+        Returns:
+            La dirección de memoria asignada a la constante.
+        """
         # Determine the range to use based on the type and scope
         constant_type = self.getConstantType(constant)
         if constant_type == 'int':
@@ -242,7 +303,6 @@ class VirtualMachine:
         # Add the constant to the temporals_values dictionary
         self.temporals_values[memory_address] = constant
 
-
         # Return the memory address
         return memory_address
 
@@ -256,11 +316,15 @@ class VirtualMachine:
         return address
 
     def translate_quadruples(self):
+        """
+        Translates quadruples into machine code instructions. 
+        It iterates over each quadruple and translates each element into a memory address or a machine code instruction.
+        If the quadruple contains a CALL instruction, it raises a NotImplementedError since methods are not implemented.
+        """
         count2 = 0
         for quad in self.quadruples:
             translated_quad = []
             count = 0
-            
 
             if len(quad) > 4:
 
@@ -312,7 +376,10 @@ class VirtualMachine:
                         count += 1
 
             else:
-                print("QUAD INSTRUCTION")
+                if self.debug:
+                    print("QUAD INSTRUCTION")
+
+
                 for element in quad:
                     if element == None:
                         translated_quad.append(None)
@@ -328,7 +395,7 @@ class VirtualMachine:
                         #check if the element is already in temporals_values as value. not as key
                         if element in self.temporals_values.values():
                             #if it is, then just append the memory address
-                            
+                                
                             translated_quad.append(element)
                             self.operand_stack.append(element)
                         else:
@@ -343,12 +410,12 @@ class VirtualMachine:
             self.memory_quadruples.append(translated_quad)
 
             #if first quad print line
-            
-            if count2 > 0:
-                print("---------------------------------------------------------------------")
-
-            print("QuadT: ",quad)
-            print("QuadT: ",translated_quad)
+            if self.debug:
+                if count2 > 0:
+                    print("---------------------------------------------------------------------")
+                if self.debug:
+                    print("QuadT: ",quad)
+                    print("QuadT: ",translated_quad)
             count2 += 1
 
     
@@ -375,88 +442,106 @@ class VirtualMachine:
             return False
 
     def setValue(self, memory_address, value):
+            """
+            Set the value of a memory address in the virtual machine.
 
-        #check the ranges of the memory address to know what type of value it is and cast it
-        for range in self.int_ranges:
-            if self.check_in_range(memory_address,range[0],range[1]):
-                value = int(value)
-                break
-        for range in self.float_ranges:
-            if self.check_in_range(memory_address,range[0],range[1]):
-                value = float(value)
-                break
-        for range in self.bool_ranges:
-            if self.check_in_range(memory_address,range[0],range[1]):
-                if value == "true":
-                    value = True
-                elif value == "false":
-                    value = False
-                break
-        for range in self.string_ranges:
-            if self.check_in_range(memory_address,range[0],range[1]):
-                value = str(value)
-                break
-        for range in self.placeholder_ranges:
-            if self.check_in_range(memory_address,range[0],range[1]):
-                value = str(value)
-                break
+            Args:
+            memory_address (int): The memory address to set the value for.
+            value (any): The value to set in the memory address.
+
+            Returns:
+            None
+            """
+            #check the ranges of the memory address to know what type of value it is and cast it
+            for range in self.int_ranges:
+                if self.check_in_range(memory_address,range[0],range[1]):
+                    value = int(value)
+                    break
+            for range in self.float_ranges:
+                if self.check_in_range(memory_address,range[0],range[1]):
+                    value = float(value)
+                    break
+            for range in self.bool_ranges:
+                if self.check_in_range(memory_address,range[0],range[1]):
+                    if value == "true":
+                        value = True
+                    elif value == "false":
+                        value = False
+                    break
+            for range in self.string_ranges:
+                if self.check_in_range(memory_address,range[0],range[1]):
+                    value = str(value)
+                    break
+            for range in self.placeholder_ranges:
+                if self.check_in_range(memory_address,range[0],range[1]):
+                    value = str(value)
+                    break
 
 
-    
-        #if its on the temporals_values then set the value in temporals_data
-        if memory_address in self.temporals_values.keys():
-            self.temporals_data[memory_address] = value
-
-        #if its on the constants_values then set the value in constants_data
-        elif memory_address in self.constants_values.keys():
-            self.constants_data[memory_address] = value
         
-        #if its on the placeholders_values then set the value in placeholders_data
-        elif memory_address in self.placeholders_values.keys():
-            self.placeholders_data[memory_address] = value
+            #if its on the temporals_values then set the value in temporals_data
+            if memory_address in self.temporals_values.keys():
+                self.temporals_data[memory_address] = value
 
-        #set the value to the variable in the varTable
-        #check if the memory address is in the global varTable
-        elif memory_address in self.global_vars['direction'].values:
-            self.global_vars.loc[self.global_vars['direction'] == memory_address, 'value'] = value
-        else:
-            #check in other variable tables
-            for scope, var_table in self.varTables.items():
-                if memory_address in var_table.df['direction'].values:
-                    var_table.df.loc[var_table.df['direction'] == memory_address, 'value'] = value
+            #if its on the constants_values then set the value in constants_data
+            elif memory_address in self.constants_values.keys():
+                self.constants_data[memory_address] = value
+            
+            #if its on the placeholders_values then set the value in placeholders_data
+            elif memory_address in self.placeholders_values.keys():
+                self.placeholders_data[memory_address] = value
+
+            #set the value to the variable in the varTable
+            #check if the memory address is in the global varTable
+            elif memory_address in self.global_vars['direction'].values:
+                self.global_vars.loc[self.global_vars['direction'] == memory_address, 'value'] = value
+            else:
+                #check in other variable tables
+                for scope, var_table in self.varTables.items():
+                    if memory_address in var_table.df['direction'].values:
+                        var_table.df.loc[var_table.df['direction'] == memory_address, 'value'] = value
 
     def getValue(self, memory_address):
-        #check if the memory address is in the temporals_values
-        if memory_address in self.temporals_values.keys():
-            return self.temporals_data[memory_address]
-        #check if the memory address is in the constants
-        elif memory_address in self.constants_values.keys():
-            return self.constants_data[memory_address]
-        #check if the memory address is in the placeholders
-        elif memory_address in self.placeholders_values.keys():
-            return self.placeholders_data[memory_address]
+            """
+            This method returns the value stored in the memory address provided. It first checks if the memory address is in the temporals_values, constants_values, or placeholders_values dictionaries. If not, it searches for the memory address in the global varTable and other variable tables. If the memory address is not found in any of these dictionaries or tables, it returns None.
 
-        #get the value of the variable on the memory address. check the varTables,temporals_values,constants
-        #check if the memory address is in the global varTable
-        elif memory_address in self.global_vars['direction'].values:
-            return self.global_vars.loc[self.global_vars['direction'] == memory_address, 'value'].values[0]
-        else:
-            #check in other variable tables
-            for scope, var_table in self.varTables.items():
-                if memory_address in var_table.df['direction'].values:
-                    return var_table.df.loc[var_table.df['direction'] == memory_address, 'value'].values[0]
+            Args:
+                memory_address (int): The memory address to retrieve the value from.
+
+            Returns:
+                The value stored in the memory address provided. If the memory address is not found, returns None.
+            """
             #check if the memory address is in the temporals_values
             if memory_address in self.temporals_values.keys():
-                return self.temporals_values[memory_address]
+                return self.temporals_data[memory_address]
+            #check if the memory address is in the constants
+            elif memory_address in self.constants_values.keys():
+                return self.constants_data[memory_address]
+            #check if the memory address is in the placeholders
+            elif memory_address in self.placeholders_values.keys():
+                return self.placeholders_data[memory_address]
+
+            #get the value of the variable on the memory address. check the varTables,temporals_values,constants
+            #check if the memory address is in the global varTable
+            elif memory_address in self.global_vars['direction'].values:
+                return self.global_vars.loc[self.global_vars['direction'] == memory_address, 'value'].values[0]
             else:
-                #check if the memory address is in the constants
-                for key, value in self.temporals_values.items():
-                    if value == memory_address:
-                        return key
-                #check if the memory address is in the placeholders
-                for key, value in self.placeholders_values.items():
-                    if value == memory_address:
-                        return key
+                #check in other variable tables
+                for scope, var_table in self.varTables.items():
+                    if memory_address in var_table.df['direction'].values:
+                        return var_table.df.loc[var_table.df['direction'] == memory_address, 'value'].values[0]
+                #check if the memory address is in the temporals_values
+                if memory_address in self.temporals_values.keys():
+                    return self.temporals_values[memory_address]
+                else:
+                    #check if the memory address is in the constants
+                    for key, value in self.temporals_values.items():
+                        if value == memory_address:
+                            return key
+                    #check if the memory address is in the placeholders
+                    for key, value in self.placeholders_values.items():
+                        if value == memory_address:
+                            return key
 
     
 
@@ -514,114 +599,132 @@ class VirtualMachine:
 
 
     def execute_quadruple(self, quad):
-        
-        if len(quad) == 4:
-            op, left_operand, right_operand, result = quad
+            """
+            Executes a quadruple operation.
 
-            print("Attempting to execute quadruple: ", self.quadruples[self.instruction_pointer])
-            #print quadruples values
-            print("Quadruple values: ", end=" ")
+            Args:
+            quad: A list containing the quadruple operation to be executed.
+
+            Returns:
+            None
+            """
             
+            if len(quad) == 4:
+                op, left_operand, right_operand, result = quad
 
-            left_value = self.getValue(left_operand)
-            right_value = self.getValue(right_operand)
+                if self.debug:
+                    print("Attempting to execute quadruple: ", self.quadruples[self.instruction_pointer])
+                    #print quadruples values
+                    print("Quadruple values: ", end=" ")
+                
 
-            try:
-                print(left_value, right_value,self.getValue(result))
-            except:
-                pass
+                left_value = self.getValue(left_operand)
+                right_value = self.getValue(right_operand)
 
+                if self.debug:
+                    try:
+                        print(left_value, right_value,self.getValue(result))
+                    except:
+                        pass
 
-            self.printstacks()
-            # Assignment operation
-            if op == "=":
-                value = self.getValue(left_operand)
-                self.setValue(result, value)
+                if self.debug:
+                    self.printstacks()
 
-            # Arithmetic operations
-            elif op in ['+', '-', '*', '/']:
+                
+                # Assignment operation
+                if op == "=":
+                    value = self.getValue(left_operand)
+                    self.setValue(result, value)
 
-                if op == '+':
-                    result_value = left_value + right_value
-                elif op == '-':
-                    result_value = left_value - right_value
-                elif op == '*':
-                    result_value = left_value * right_value
-                elif op == '/':
-                    #check for division by zero
-                    if right_value == 0:
-                        raise ValueError("Division by zero")
-                    else:
+                # Arithmetic operations
+                elif op in ['+', '-', '*', '/']:
 
-                        result_value = left_value / right_value
+                    if op == '+':
+                        result_value = left_value + right_value
+                    elif op == '-':
+                        result_value = left_value - right_value
+                    elif op == '*':
+                        result_value = left_value * right_value
+                    elif op == '/':
+                        #check for division by zero
+                        if right_value == 0:
+                            raise ValueError("Division by zero")
+                        else:
 
-                self.setValue(result, result_value)
+                            result_value = left_value / right_value
 
-            # Relational operations
-            elif op in ['>', '<', '>=', '<=', '!=']:
+                    self.setValue(result, result_value)
 
-                if op == '>':
-                    result_value = left_value > right_value
-                elif op == '<':
-                    result_value = left_value < right_value
-                elif op == '>=':
-                    result_value = left_value >= right_value
-                elif op == '<=':
-                    result_value = left_value <= right_value
-                elif op == '!=':
-                    result_value = left_value != right_value
+                # Relational operations
+                elif op in ['>', '<', '>=', '<=', '!=']:
 
-                self.setValue(result, result_value)
+                    if op == '>':
+                        result_value = left_value > right_value
+                    elif op == '<':
+                        result_value = left_value < right_value
+                    elif op == '>=':
+                        result_value = left_value >= right_value
+                    elif op == '<=':
+                        result_value = left_value <= right_value
+                    elif op == '!=':
+                        result_value = left_value != right_value
+
+                    self.setValue(result, result_value)
+                
+                # Print operation
+                elif op == 'PRINT':
+                    #if string then strip the quotes
+                    if isinstance(left_value, str):
+                        left_value = left_value[1:-1]
+                    print(left_value)
+
+                # Control flow operations
+                elif op in ['GOTO_T']:
+                    self.jumpingDirections(right_operand)
+                elif op in ['GOTO']:
+                    if right_value != None and left_value != None and self.instruction_pointer !=0:
+
+                        if self.debug:
+                            print("REPEAT")
+                            print(left_operand,":",left_value)
+                            print(self.placeholders_positions)
+                            print(str(self.placeholders_positions[left_value]))
+                            print(self.placeholders_data)
+                            print(self.end_cycle_positions)
+                            self.printvariableTables()
+                            print()
+                        #apppend the current position to the end_cycle_positions +1 so it can go to the next quadruple
+                        self.end_cycle_positions.append(self.instruction_pointer+1)
+                        self.instruction_pointer = self.placeholders_positions[left_value]
+                
+                elif op in ['GOTO_F']:
+                    #if the operand is then end of a cycle then pop the end_cycle_positions and go to the next quadruple
+                    if left_value == False:
+                        #print("ATTEMPTING END OF CYCLE")
+                        self.instruction_pointer = self.end_cycle_positions.pop()
+                        
+
+                elif op == ["PARAM"]:
+                    raise NotImplementedError("PARAM operation not implemented, methods not implemented")
+
             
-            # Print operation
-            elif op == 'PRINT':
-                #if string then strip the quotes
-                if isinstance(left_value, str):
-                    left_value = left_value[1:-1]
-                print(left_value)
+            elif len(quad) == 3:
+                op, left_operand, result = quad
 
-            # Control flow operations
-            elif op in ['GOTO_T']:
-                self.jumpingDirections(right_operand)
-            elif op in ['GOTO']:
-                if right_value != None and left_value != None and self.instruction_pointer !=0:
-                    print("REPEAT")
-                    print(left_operand,":",left_value)
-                    print(self.placeholders_positions)
-                    print(str(self.placeholders_positions[left_value]))
-                    print(self.placeholders_data)
-                    print(self.end_cycle_positions)
-                    self.printvariableTables()
-                    print()
-                    #apppend the current position to the end_cycle_positions +1 so it can go to the next quadruple
-                    self.end_cycle_positions.append(self.instruction_pointer+1)
-                    self.instruction_pointer = self.placeholders_positions[left_value]
-            
-            elif op in ['GOTO_F']:
-                #if the operand is then end of a cycle then pop the end_cycle_positions and go to the next quadruple
-                if left_value == False:
-                    print("ATTEMPTING END OF CYCLE")
-                    self.instruction_pointer = self.end_cycle_positions.pop()
-                    
-
-            elif op == ["PARAM"]:
-                raise NotImplementedError("PARAM operation not implemented, methods not implemented")
-
-        
-        elif len(quad) == 3:
-            op, left_operand, result = quad
-
-            # Control flow operations
-            if op in ['GOTO', 'GOTO_F', 'GOTO_T']:
-                # GOTO_F operation
-                if op == "GOTO_F":
-                    condition_value = self.getValue(left_operand)
-                    print("Condition value: ", condition_value)
-                    if not condition_value:  # If condition is false
-                        self.instruction_pointer = self.findQuadruple_index(quad)  # Jump to quadruple after label
-                    else:
-                        self.instruction_pointer += self.findQuadruple_index(quad)  # Move to next quadruple
-                    return
+                # Control flow operations
+                if op in ['GOTO', 'GOTO_F', 'GOTO_T']:
+                    # GOTO_F operation
+                    if op == "GOTO_F":
+                        condition_value = self.getValue(left_operand)
+                        
+                        if self.debug:
+                            print("Condition value: ", condition_value)
+                        
+                        if not condition_value:  # If condition is false
+                            self.instruction_pointer = self.findQuadruple_index(quad)  # Jump to quadruple after label
+                        else:
+                            self.instruction_pointer += self.findQuadruple_index(quad)  # Move to next quadruple
+                        return
                 
 
     def execute_quadruples(self):
@@ -637,12 +740,13 @@ class VirtualMachine:
         # Translate quadruples
         self.translate_quadruples()
         
-        self.printTranslatedQuadruples()
-        self.printstacks()
+        if self.debug:
+            self.printTranslatedQuadruples()
+            self.printstacks()
 
-        print("\n-----------------------------------------------------------------------")
-        print("CODE EXECUTION")
-        print("-----------------------------------------------------------------------")
+            print("\n-----------------------------------------------------------------------")
+            print("CODE EXECUTION")
+            print("-----------------------------------------------------------------------")
 
         #map placeholders
         self.mapPlaceholders()
@@ -650,8 +754,10 @@ class VirtualMachine:
         # Execute quadruples
         self.execute_quadruples()
 
-        print("-----------------------------------------------------------------------")
-        print("CODE EXECUTION FINISHED")
-        print("-----------------------------------------------------------------------")
 
-        self.printvariableTables()
+        if self.debug:
+            print("-----------------------------------------------------------------------")
+            print("CODE EXECUTION FINISHED")
+            print("-----------------------------------------------------------------------")
+
+            self.printvariableTables()

@@ -6,70 +6,79 @@ from utils.BabyDuckVisitor import BabyDuckVisitor
 
 
 class Visitor(BabyDuckVisitor):
-    def __init__(self,var_tables,functions_directory):
-        self.temp_counter = 0
-        self.quadruples = []
-        self.operand_stack = []
-        self.operator_stack = []
-        self.type_dict = {}
-        self.jump_stack = []
-        self.temp_counter = 0
-        self.label_counter = 0
-        self.precedence = {
-            "(": 1,
-            "+": 2,
-            "-": 2,
-            "*": 3,
-            "/": 3,
-        }
-        self.Semantics = {
-            'int': {
-                'int': {
-                    '+': 'int',
-                    '-': 'int',
-                    '*': 'int',
-                    '/': 'int',
-                    '<': 'bool',
-                    '>': 'bool',
-                    '!=': 'bool',
-                },
-                'float': {
-                    '+': 'float',
-                    '-': 'float',
-                    '*': 'float',
-                    '/': 'float',
-                    '<': 'bool',
-                    '>': 'bool',
-                    '!=': 'bool',
+    def __init__(self,var_tables,functions_directory,debug=False):
+            """
+            Initializes the Visitor object with the given parameters.
 
-                }
-            },
-            'float': {
+            Args:
+            - var_tables: A dictionary containing the variable tables for each scope.
+            - functions_directory: A dictionary containing the functions directory.
+            - debug: A boolean indicating whether to enable debug mode or not.
+            """
+            self.temp_counter = 0
+            self.quadruples = []
+            self.operand_stack = []
+            self.operator_stack = []
+            self.type_dict = {}
+            self.jump_stack = []
+            self.temp_counter = 0
+            self.label_counter = 0
+            self.precedence = {
+                "(": 1,
+                "+": 2,
+                "-": 2,
+                "*": 3,
+                "/": 3,
+            }
+            self.Semantics = {
                 'int': {
-                    '+': 'float',
-                    '-': 'float',
-                    '*': 'float',
-                    '/': 'float',
-                    '<': 'bool',
-                    '>': 'bool',
-                    '!=': 'bool',
+                    'int': {
+                        '+': 'int',
+                        '-': 'int',
+                        '*': 'int',
+                        '/': 'int',
+                        '<': 'bool',
+                        '>': 'bool',
+                        '!=': 'bool',
+                    },
+                    'float': {
+                        '+': 'float',
+                        '-': 'float',
+                        '*': 'float',
+                        '/': 'float',
+                        '<': 'bool',
+                        '>': 'bool',
+                        '!=': 'bool',
+
+                    }
                 },
                 'float': {
-                    '+': 'float',
-                    '-': 'float',
-                    '*': 'float',
-                    '/': 'float',
-                    '<': 'bool',
-                    '>': 'bool',
-                    '!=': 'bool',
+                    'int': {
+                        '+': 'float',
+                        '-': 'float',
+                        '*': 'float',
+                        '/': 'float',
+                        '<': 'bool',
+                        '>': 'bool',
+                        '!=': 'bool',
+                    },
+                    'float': {
+                        '+': 'float',
+                        '-': 'float',
+                        '*': 'float',
+                        '/': 'float',
+                        '<': 'bool',
+                        '>': 'bool',
+                        '!=': 'bool',
+                    }
                 }
             }
-        }
-        self.scope = "Global"
-        self.quadCounter = 0
-        self.functions_directory = functions_directory
-        self.varTables = var_tables
-        self.insert_initial_goto()
+            self.scope = "Global"
+            self.quadCounter = 0
+            self.debug = debug
+            self.functions_directory = functions_directory
+            self.varTables = var_tables
+            self.insert_initial_goto()
 
 
 
@@ -199,6 +208,11 @@ class Visitor(BabyDuckVisitor):
         return ctx.getText()
     
     def process_operator(self):
+        """
+        This method processes an operator by popping the right and left operands and the operator from their respective stacks.
+        It then generates a new temporary variable and appends it to the operand stack. The method then checks if the types of the operands are compatible with the operator using the semantic cube. 
+        The result type is appended to the type dictionary and a quadruple is generated.
+        """
         right_operand = self.operand_stack.pop()
         left_operand = self.operand_stack.pop()
         operator = self.operator_stack.pop()
@@ -221,7 +235,15 @@ class Visitor(BabyDuckVisitor):
 
 
     def visitExpression(self, ctx: BabyDuckParser.ExpressionContext):
-        
+        """
+        Visits an expression node in the AST and generates the corresponding quadruples.
+        If the expression has only one child, it visits it and returns the result.
+        If the expression has three children and the second one is a relational operator, it visits the left and right children,
+        generates the corresponding quadruple and returns the temporary variable where the result is stored.
+        If the expression has a different structure, it raises a ValueError.
+        :param ctx: The expression node in the AST.
+        :return: The temporary variable where the result is stored.
+        """
         if ctx.getChildCount() == 1:
             # If there is only one child, visit it and return the result
             return self.visit(ctx.exp(0))
@@ -242,8 +264,8 @@ class Visitor(BabyDuckVisitor):
             left_type = self.get_type(left)
             right_type = self.get_type(right)
 
-            
-            print(f"left: {left} right: {right} operator: {operator}")
+            if self.debug:
+                print(f"left: {left} right: {right} operator: {operator}")
 
             #check if types are compatible with operator
             result_type = self.check_semantic_cube(left_type,right_type,operator)
@@ -295,6 +317,11 @@ class Visitor(BabyDuckVisitor):
     #--------------------------------------------------------------
 
     def visitExp(self, ctx: BabyDuckParser.ExpContext):
+        """
+        Visits an expression node in the abstract syntax tree and generates quadruples for it.
+        :param ctx: The expression context to visit.
+        :return: The result of the expression.
+        """
         terminos = ctx.termino()
         terminos_length = len(terminos)
         left = self.visit(terminos[0])
@@ -331,49 +358,72 @@ class Visitor(BabyDuckVisitor):
         return left
 
     def visitTermino(self, ctx: BabyDuckParser.TerminoContext):
-        result = self.visit(ctx.factor(0))
+            """
+            Visits the TerminoContext node and generates quadruples for the expression.
 
-        for i in range(1, len(ctx.factor())):
-            operator = ctx.getChild(2 * i - 1).getText()
-            right = self.visit(ctx.factor(i))
+            Args:
+            - ctx: BabyDuckParser.TerminoContext object representing the current context.
 
-            if right is not None:
-                #create new temporary
-                temp_var = self.new_temporary()
+            Returns:
+            - result: The result of the expression.
+            """
+            result = self.visit(ctx.factor(0))
 
-                #get type of right
-                right_type = self.get_type(right)
+            for i in range(1, len(ctx.factor())):
+                operator = ctx.getChild(2 * i - 1).getText()
+                right = self.visit(ctx.factor(i))
 
-                #append to the type dict
-                self.type_dict[temp_var] = right_type
+                if right is not None:
+                    #create new temporary
+                    temp_var = self.new_temporary()
 
-                #append to operand stack
-                self.operand_stack.append(temp_var)
+                    #get type of right
+                    right_type = self.get_type(right)
 
-                #generate quadruple
-                self.generate_quadruple(operator, result, right, temp_var,right_type)
-                
-                #result is new temporary
-                result = temp_var   
-        
-        return result
+                    #append to the type dict
+                    self.type_dict[temp_var] = right_type
+
+                    #append to operand stack
+                    self.operand_stack.append(temp_var)
+
+                    #generate quadruple
+                    self.generate_quadruple(operator, result, right, temp_var,right_type)
+                    
+                    #result is new temporary
+                    result = temp_var   
+            
+            return result
 
     def visitFactor(self, ctx: BabyDuckParser.FactorContext):
-        if ctx.parenthesized_expression():
-            return self.visit(ctx.parenthesized_expression())
-        elif ctx.unary_expression():
-            return self.visit(ctx.unary_expression())
+            """
+            Visits the Factor rule of the BabyDuck grammar and returns the result of the visit.
+
+            :param ctx: The FactorContext object representing the current parse tree node.
+            :return: The result of the visit.
+            """
+            if ctx.parenthesized_expression():
+                return self.visit(ctx.parenthesized_expression())
+            elif ctx.unary_expression():
+                return self.visit(ctx.unary_expression())
+                
+            else:
+                # Handle ID or cte
+                operand = ctx.getChild(0).getText()
+                self.operand_stack.append(operand)
             
-        else:
-            # Handle ID or cte
-            operand = ctx.getChild(0).getText()
-            self.operand_stack.append(operand)
-        
-        #return last part of operand or none
-        return self.operand_stack[-1]
+            #return last part of operand or none
+            return self.operand_stack[-1]
     
     def visitUnary_expression(self, ctx: BabyDuckParser.Unary_expressionContext):
-        print("Unary Expression")
+        """
+        Visits a Unary Expression node in the parse tree and generates a quadruple for it.
+
+        :param ctx: The Unary_expressionContext node in the parse tree.
+        :return: The temporary variable generated for the expression.
+        """
+        if self.debug:
+            print("Unary Expression")
+        
         #split the operator and operand
         operator = ctx.getChild(0).getText()
         operand = self.visit(ctx.factor())
@@ -394,6 +444,11 @@ class Visitor(BabyDuckVisitor):
     #--------------------------------------------------------------
 
     def visitAssign(self, ctx: BabyDuckParser.AssignContext):
+        """
+        Visits the AssignContext node and generates a quadruple for the assignment.
+        :param ctx: The AssignContext node to visit.
+        :return: None
+        """
         # Visit the expression to evaluate it and push the result onto the operand stack
         value = self.visit(ctx.expression())
         # The ID to which the value is assigned
@@ -407,11 +462,17 @@ class Visitor(BabyDuckVisitor):
 
         #append to type dict
         self.type_dict[var_id] = var_type
-    
+        
         # Generate a quadruple for the assignment
         self.generate_quadruple('=', value, None, var_id,var_type)
 
     def visitVar(self, ctx: BabyDuckParser.VarsContext):
+        """
+        Visits a variable context and generates a quadruple for the assignment.
+
+        :param ctx: The variable context to visit.
+        :type ctx: BabyDuckParser.VarsContext
+        """
         # Visit the expression to evaluate it and push the result onto the operand stack
         value = self.visit(ctx.expression())
         # The ID to which the value is assigned
@@ -425,6 +486,13 @@ class Visitor(BabyDuckVisitor):
     #--------------------------------------------------------------
 
     def visitF_call(self, ctx: BabyDuckParser.F_callContext): 
+        """
+        Visits a function call node in the parse tree and generates the corresponding quadruples.
+        
+        :param ctx: The parse tree node representing the function call.
+        :type ctx: BabyDuckParser.F_callContext
+        :return: None
+        """
         function_name = ctx.ID().getText()
         scope = function_name
         arg_count = 0
@@ -442,38 +510,50 @@ class Visitor(BabyDuckVisitor):
         return None
 
     def visitCondition(self, ctx):
-        condition = self.visit(ctx.expression())
+            """
+            Visits the condition node of an if statement and generates the corresponding quadruples.
 
-        # Generate a placeholder for the false jump
-        false_placeholder = self.new_label_or_placeholder("placeholder")
+            :param ctx: The context node of the condition.
+            :type ctx: antlr4.tree.Tree
+            """
+            condition = self.visit(ctx.expression())
 
-        # Generate the quadruple for the conditional jump
-        self.quadruples.append(("GOTO_F", condition, None, false_placeholder))
+            # Generate a placeholder for the false jump
+            false_placeholder = self.new_label_or_placeholder("placeholder")
 
-        # Visit the body of the if statement
-        self.visit(ctx.body(0))
+            # Generate the quadruple for the conditional jump
+            self.quadruples.append(("GOTO_F", condition, None, false_placeholder))
 
-        end_if_placeholder = None
-        if ctx.else_():
-            # Generate a placeholder for the end of the if block
-            end_if_placeholder = self.new_label_or_placeholder("placeholder")
+            # Visit the body of the if statement
+            self.visit(ctx.body(0))
 
-            # Generate the quadruple to jump to the end of the if block
-            self.quadruples.append(("GOTO_T", None, None, end_if_placeholder))
+            end_if_placeholder = None
+            if ctx.else_():
+                # Generate a placeholder for the end of the if block
+                end_if_placeholder = self.new_label_or_placeholder("placeholder")
 
-        # Backpatch the false jump with the actual LABEL
-        false_jump_label = self.new_label_or_placeholder("LABEL")
-        self.backpatch(false_placeholder, false_jump_label)
+                # Generate the quadruple to jump to the end of the if block
+                self.quadruples.append(("GOTO_T", None, None, end_if_placeholder))
 
-        if ctx.else_():
-            # Visit the else body
-            self.visit(ctx.body(1))
+            # Backpatch the false jump with the actual LABEL
+            false_jump_label = self.new_label_or_placeholder("LABEL")
+            self.backpatch(false_placeholder, false_jump_label)
 
-            # Backpatch the end if jump with the actual LABEL
-            end_if_label = self.new_label_or_placeholder("LABEL")
-            self.backpatch(end_if_placeholder, end_if_label)
+            if ctx.else_():
+                # Visit the else body
+                self.visit(ctx.body(1))
+
+                # Backpatch the end if jump with the actual LABEL
+                end_if_label = self.new_label_or_placeholder("LABEL")
+                self.backpatch(end_if_placeholder, end_if_label)
 
     def visitCycle(self, ctx: BabyDuckParser.CycleContext):
+        """
+        Visits a cycle node in the parse tree and generates quadruples for it.
+
+        :param ctx: The cycle context node in the parse tree.
+        :return: None
+        """
         # Generate the start LABEL for the loop and push it onto the jump stack
         start_label = self.new_label_or_placeholder("LABEL")
         self.jump_stack.append(("start", start_label))
@@ -511,13 +591,15 @@ class Visitor(BabyDuckVisitor):
         return None
 
     def visitPrint(self, ctx: BabyDuckParser.PrintContext):
-        # Visit all expressions or strings to be printed
-        for print_item in ctx.expression() + ctx.STRING():
-            # Check if print_item is an instance of TerminalNode, which is used for tokens
-            if isinstance(print_item, TerminalNode):
-                item = print_item.getText()
-            else:
-                item = self.visit(print_item)
-            # Generate a quadruple for the print operation
-            self.generate_quadruple('PRINT', item, None, None)
+            """
+            Visits all expressions or strings to be printed and generates a quadruple for the print operation.
+
+            :param ctx: The print context to visit.
+            """
+            for print_item in ctx.expression() + ctx.STRING():
+                if isinstance(print_item, TerminalNode):
+                    item = print_item.getText()
+                else:
+                    item = self.visit(print_item)
+                self.generate_quadruple('PRINT', item, None, None)
 
