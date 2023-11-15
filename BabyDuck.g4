@@ -26,7 +26,7 @@ print: print_w LPAREN (expression | STRING) (COMMA (expression|STRING))* RPAREN 
 f_call: ID LPAREN (expression (COMMA expression)* )? RPAREN SEMICOLON;
 
 expression: exp (relop exp)?;
-relop: GREATERTHAN | LESSTHAN | NOTEQUALS ;
+relop: GREATERTHAN | LESSTHAN | NOTEQUALS;
 
 exp: termino ((PLUS | MINUS) termino)*;
 termino: factor ((MULTIPLY | DIVIDE) factor)*;

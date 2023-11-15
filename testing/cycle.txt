@@ -8,7 +8,7 @@ main
 
     while { 
         bar = bar + 1;
-    
+        print(bar);
     } do (bar < 10);
 
 }

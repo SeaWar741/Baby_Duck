@@ -1,0 +1,22 @@
+program CompilerV1;
+
+var foo: int; bar, foobar, barfoo: float;
+main 
+{ 
+    bar = 1 + 2;
+    foo = 1;
+
+    if (foo > 10) {
+        print("foo is 1");
+            if (foo > 10) {
+                print("foo is 1 2ndloop");
+            } else {
+                print("foo is not 1 2ndloop");
+            };
+    } else {
+        print("foo is not 1");
+    };
+
+}
+
+end     

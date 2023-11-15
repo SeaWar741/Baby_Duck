@@ -243,7 +243,7 @@ class Visitor(BabyDuckVisitor):
             right_type = self.get_type(right)
 
             
-            
+            print(f"left: {left} right: {right} operator: {operator}")
 
             #check if types are compatible with operator
             result_type = self.check_semantic_cube(left_type,right_type,operator)

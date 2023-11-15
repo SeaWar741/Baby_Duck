@@ -33,7 +33,6 @@ void emptyFunction2(floatNumber: float, intNumber: int) [
 main 
 { 
     emptyFunction2(2, 3);
-    emptyFunction2(2, 3);
 }
 
 end
