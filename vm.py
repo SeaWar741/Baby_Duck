@@ -86,12 +86,21 @@ class VirtualMachine:
         self.constants_data = {} #dictionary of constants data key = memory address,value
         self.placeholders_data = {} #dictionary of placeholders data key = memory address,value
 
+        self.placeholders_positions = {} #dictionary of placeholders positions key = placeholder name, value = position in quadruples
+
+        self.end_cycle_positions = [] #list of positions of the end of cycles youve entered
+
+    def printvariableTables(self):
+        #print varTables
+        for scope, var_table in self.varTables.items():
+            print(f"\n{scope} varTable:")
+            print(var_table.df)
 
     def is_operator(self, element):
         return element in ['+', '-', '*', '/', '>', '<', '>=', '<=', '==', '!=', '&&', '||', '=']
     
     def is_label_or_function_name(self, element):
-        instructions = ["LABEL", "GOTO","CALL","PARAM","GOTO_F"]
+        instructions = ["LABEL", "GOTO","CALL","PARAM","GOTO_F","GOTO_T","ERA","GOSUB","RETURN","ENDPROC","PRINT"]
 
         if element in self.functions:
             return True
@@ -232,6 +241,7 @@ class VirtualMachine:
 
         # Add the constant to the temporals_values dictionary
         self.temporals_values[memory_address] = constant
+
 
         # Return the memory address
         return memory_address
@@ -432,6 +442,11 @@ class VirtualMachine:
                 for key, value in self.temporals_values.items():
                     if value == memory_address:
                         return key
+                #check if the memory address is in the placeholders
+                for key, value in self.placeholders_values.items():
+                    if value == memory_address:
+                        return key
+
     
 
     #TODO FIX THIS
@@ -439,26 +454,75 @@ class VirtualMachine:
         #find the index of the quadruple in the memory_quadruples based on the placeholders_values. 
         #meaning i have as target P3, i should find the index where P4 or L4 is in the quadruple. The L and P are the same
         #so i can go and execute the quadruple after the placeholder
+
+        #get the placeholder from the address
+        placeholder = self.temporals_data[quad[1]]
         
-        for index, quad in enumerate(self.memory_quadruples):
-            if quad[0] == "LABEL" or quad[0] == "GOTO" or quad[0] == "CALL" or quad[0] == "PARAM" or quad[0] == "GOTO_F":
-                if quad[1] == self.placeholders_values[quad[1]]:
-                    return index
+        #print(placeholder)
                 
         #if nothing is found it means that the Lable, Placeholder or GOTO is the last target so execute the next quadruple
-        return self.instruction_pointer
+        #print("MOVING ON")
+        return self.instruction_pointer + 1
+    
+
+    def jumpingDirections(self,target):
+        #iterate over the quads and find the quadruple with the next label or placeholder
+        #if the quadruple is a label or placeholder then return the index of the quadruple
+        for quad in self.memory_quadruples:
+            if quad[-1][1:] == target[1:]:
+                return self.memory_quadruples.index(quad)
+        #if nothing is found it means that the Lable, Placeholder or GOTO is the last target so execute the next quadruple
+        self.instruction_pointer + 1
+
+
+    def mapPlaceholders(self):
+        #iterate over the quadruples and find the placeholders, then map each placeholder memory address to the quadruple index and add to the
+        #placeholders values dictionary
+        for quad in self.quadruples:
+            #if it doesnt exist in the placeholders_values then add it
+            if quad[1] not in self.placeholders_positions.keys():
+                if quad[0] == "LABEL":
+                    self.placeholders_positions[quad[1]] = self.quadruples.index(quad)
+                elif quad[0] == "GOTO":
+                    self.placeholders_positions[quad[1]] = self.quadruples.index(quad)
+                elif quad[0] == "GOTO_F":
+                    self.placeholders_positions[quad[1]] = self.quadruples.index(quad)
+                elif quad[0] == "GOTO_T":
+                    self.placeholders_positions[quad[1]] = self.quadruples.index(quad)
+                elif quad[0] == "CALL":
+                    self.placeholders_positions[quad[1]] = self.quadruples.index(quad)
+                elif quad[0] == "END":
+                    self.placeholders_positions[quad[1]] = len(self.quadruples)
+
+
+    def findFirstAppearance(self,element):
+        #go through the placeholders_positions and find the first appearance of the element based on the value in memory
+        for key, value in self.placeholders_positions.items():
+            if self.getValue(value) == element:
+                return key
+
+
 
     def execute_quadruple(self, quad):
         
         if len(quad) == 4:
             op, left_operand, right_operand, result = quad
 
-            print("Attempting to execute quadruple: ", quad)
-            self.printstacks()
+            print("Attempting to execute quadruple: ", self.quadruples[self.instruction_pointer])
+            #print quadruples values
+            print("Quadruple values: ", end=" ")
+            
 
             left_value = self.getValue(left_operand)
             right_value = self.getValue(right_operand)
 
+            try:
+                print(left_value, right_value,self.getValue(result))
+            except:
+                pass
+
+
+            self.printstacks()
             # Assignment operation
             if op == "=":
                 value = self.getValue(left_operand)
@@ -502,6 +566,30 @@ class VirtualMachine:
             # Print operation
             elif op == 'PRINT':
                 print(left_value)
+
+            # Control flow operations
+            elif op in ['GOTO_T']:
+                self.jumpingDirections(right_operand)
+            elif op in ['GOTO']:
+                if right_value != None and left_value != None and self.instruction_pointer !=0:
+                    print("REPEAT")
+                    print(left_operand,":",left_value)
+                    print(self.placeholders_positions)
+                    print(str(self.placeholders_positions[left_value]))
+                    print(self.placeholders_data)
+                    self.printvariableTables()
+                    print()
+                    #apppend the current position to the end_cycle_positions +1 so it can go to the next quadruple
+                    self.end_cycle_positions.append(self.instruction_pointer+1)
+                    self.instruction_pointer = self.placeholders_positions[left_value]
+            
+            elif op in ['GOTO_F']:
+                #if the operand is then end of a cycle then pop the end_cycle_positions and go to the next quadruple
+                if left_value == False:
+                    print("ATTEMPTING END OF CYCLE")
+                    self.instruction_pointer = self.end_cycle_positions.pop()
+
+
         
         elif len(quad) == 3:
             op, left_operand, result = quad
@@ -509,12 +597,15 @@ class VirtualMachine:
             # Control flow operations
             if op in ['GOTO', 'GOTO_F', 'GOTO_T']:
                 # GOTO_F operation
-                if op == 'GOTO_F':
-                    print("GOTO_F HANDLING")
-                    #new_index = self.findQuadruple_index(quad)
-                    #print("GOTO_F: ",self.memory_quadruples[new_index])
-                if op == 'GOTO_T':
-                    print("GOTO_T HANDLING")
+                if op == "GOTO_F":
+                    condition_value = self.getValue(left_operand)
+                    print("Condition value: ", condition_value)
+                    if not condition_value:  # If condition is false
+                        self.instruction_pointer = self.findQuadruple_index(quad)  # Jump to quadruple after label
+                    else:
+                        self.instruction_pointer += self.findQuadruple_index(quad)  # Move to next quadruple
+                    return
+                
 
 
                     
@@ -534,10 +625,14 @@ class VirtualMachine:
         # Translate quadruples
         self.translate_quadruples()
         self.printTranslatedQuadruples()
+        self.printstacks()
 
         print("\n-----------------------------------------------------------------------")
         print("CODE EXECUTION")
         print("-----------------------------------------------------------------------")
+
+        #map placeholders
+        self.mapPlaceholders()
 
         # Execute quadruples
         self.execute_quadruples()
@@ -545,7 +640,5 @@ class VirtualMachine:
         print("-----------------------------------------------------------------------")
         print("CODE EXECUTION FINISHED")
         print("-----------------------------------------------------------------------")
-        #print varTables
-        for scope, var_table in self.varTables.items():
-            print(f"\n{scope} varTable:")
-            print(var_table.df)
+
+        self.printvariableTables()

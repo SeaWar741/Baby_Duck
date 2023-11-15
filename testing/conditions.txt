@@ -4,9 +4,9 @@ var foo: int; bar, foobar, barfoo: float;
 main 
 { 
     bar = 1 + 2;
-    foo = (1+2)/3;
+    foo = 1;
 
-    if (foo > 1) {
+    if (foo > 10) {
         print("foo is 1");
     } else {
         print("foo is not 1");

@@ -1,0 +1,19 @@
+program CompilerV1;
+
+var a, b, temp: int;
+
+main 
+{ 
+    a = 0;
+    b = 1;
+
+    while { 
+        print(a);
+        temp = a + b; 
+        a = b;
+        b = temp;
+    } do (a < 100);
+
+}
+
+end

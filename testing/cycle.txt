@@ -4,15 +4,12 @@ var foo: int; bar, foobar, barfoo: float;
 
 main 
 { 
-    bar = 1 + 2;
-    foo = (1+2)/3;
-    foobar = 1.0 * 200.0;
+    bar = 2;
 
     while { 
-        barfoo = bar + 1; 
-        foobar = foo - 1;
+        bar = bar + 1;
     
-    } do (foo < 10);
+    } do (bar < 10);
 
 }
 
